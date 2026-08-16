@@ -1,0 +1,6 @@
+print("Info for NBA offensive networks")
+
+season = input("Enter desired season (ex. 2024-25): ")
+playoffs = input("Playoffs (Y/N): ")
+team = input("Team: ")
+filtered = input("Filtered (Y/N): ")
