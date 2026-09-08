@@ -65,8 +65,8 @@ for yr in years:
                     
                     for team_id, fraction in team_frac_inf.items():
                         #replace the current rows values with adjusted for the team stored in shots_yr
-                        if team_id == shots_yr['team_id']:
-                            shots_yr.loc[(shots_yr['player_id']==player)&(shots_yr['team_id']==team_id), ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] = shots_yr.loc[shots_yr['player_id']==player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] * fraction
+                        if team_id == shots_yr.loc[shots_yr['player_id'] == player, 'team_id'].values[0]:
+                            shots_yr.loc[shots_yr['player_id'] == player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] = shots_yr.loc[shots_yr['player_id']==player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] * fraction
                         #create a new row for the player with the team_id and adjusted shot attempts
                         else:
                             new_row = shots_yr.loc[shots_yr['player_id']==player].copy()
