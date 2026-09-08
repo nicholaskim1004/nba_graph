@@ -1,15 +1,11 @@
+##script to get the shot attempts and each location for each player
+##for traded players will use fraction of minutes played at each team to adjust the shot attempts
+
 import time
 import sqlite3
-import numpy as np 
 import pandas as pd
-import networkx as nx
-import matplotlib.pyplot as plt
 
-from nba_api.stats.static import teams, players
-from nba_api.stats.endpoints import commonteamroster, leaguedashplayershotlocations, PlayerCareerStats, TeamPlayerDashboard, playerdashptpass
-
-
-#functions
+from nba_api.stats.endpoints import leaguedashplayershotlocations, PlayerCareerStats
 
 #setting up database
 #connect to database
@@ -24,7 +20,8 @@ cursor.execute("""
                    player_id INTEGER,
                    season TEXT, 
                    team_id INTEGER,
-                   fraction REAL
+                   fraction REAL,
+                   PRIMARY KEY (player_id, season, team_id)
                 )""")
 
 #shots table
@@ -62,29 +59,33 @@ for yr in years:
     shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
     
 #for each traded player, storing the fraction of minutes played for each team
-'''
-traded_players_min = {}
 
-for player in shots_yr[('', 'PLAYER_ID')].unique():
+    traded_players_min = []
+
+    for player in shots_yr['player_id'].unique():
+        
+        try:
+            inf = PlayerCareerStats(player).get_data_frames()[0]
+
+            if not inf.empty:
+                team_inf = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']!=0)]
+                
+                if len(team_inf) > 1:
+                    total = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']==0)]
+                    fractions = team_inf.loc[:,'MIN'].values.flatten()/total.loc[:,'MIN'].values
+                    teamids = team_inf['TEAM_ID'].values
+                
+                    team_frac_inf = dict(zip(teamids, fractions))
+
+                    for team_id, fraction in team_frac_inf.items():
+                        traded_players_min.append({'player_id': player, 'team_id': team_id, 'fraction': fraction})
+            time.sleep(1)
+        except Exception as e:
+            print(f'having issues with {player}: {e}')
     
-    try:
-        inf = PlayerCareerStats(player).get_data_frames()[0]
-
-        if not inf.empty:
-            team_inf = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']!=0)]
-            
-            if len(team_inf) > 1:
-                total = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']==0)]
-                fractions = team_inf.loc[:,'MIN'].values.flatten()/total.loc[:,'MIN'].values
-                teamids = team_inf['TEAM_ID'].values
-            
-                team_frac_inf = dict(zip(teamids, fractions))
-
-                traded_players_min[player] = team_frac_inf
-        time.sleep(1)
-    except Exception as e:
-        print(f'having issues with {player}: {e}')
-'''          
-
+    traded = pd.DataFrame(traded_players_min).to_sql('traded_players', con, if_exists='append', index=False)
+    
+    #use the fraction of minutes to adjust the number of shot attempts
+    
 
 
