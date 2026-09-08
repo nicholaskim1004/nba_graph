@@ -12,19 +12,7 @@ from nba_api.stats.endpoints import leaguedashplayershotlocations, PlayerCareerS
 con = sqlite3.connect('data/nba.db')
 cursor = con.cursor()
 
-##initalize tables
-#traded players table
-cursor.execute("""
-               CREATE TABLE IF NOT EXISTS traded_players
-               (
-                   player_id INTEGER,
-                   season TEXT, 
-                   team_id INTEGER,
-                   fraction REAL,
-                   PRIMARY KEY (player_id, season, team_id)
-                )""")
-
-#shots table
+##initalize shots table
 cursor.execute("""
                CREATE TABLE IF NOT EXISTS shots_yr
                (
@@ -43,8 +31,8 @@ cursor.execute("""
                """)
 
 #run on all years once its working for one year
-years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
-
+#years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
+years = ['2024-25']
 #shots dataset
 for yr in years:
     shots_yr = leaguedashplayershotlocations.LeagueDashPlayerShotLocations(season=yr, season_type_all_star='Regular Season').get_data_frames()[0]
@@ -60,8 +48,6 @@ for yr in years:
     
 #for each traded player, storing the fraction of minutes played for each team
 
-    traded_players_min = []
-
     for player in shots_yr['player_id'].unique():
         
         try:
@@ -76,16 +62,21 @@ for yr in years:
                     teamids = team_inf['TEAM_ID'].values
                 
                     team_frac_inf = dict(zip(teamids, fractions))
-
+                    
                     for team_id, fraction in team_frac_inf.items():
-                        traded_players_min.append({'player_id': player, 'team_id': team_id, 'fraction': fraction})
+                        #replace the current rows values with adjusted for the team stored in shots_yr
+                        if team_id == shots_yr['team_id']:
+                            shots_yr.loc[(shots_yr['player_id']==player)&(shots_yr['team_id']==team_id), ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] = shots_yr.loc[shots_yr['player_id']==player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] * fraction
+                        #create a new row for the player with the team_id and adjusted shot attempts
+                        else:
+                            new_row = shots_yr.loc[shots_yr['player_id']==player].copy()
+                            new_row['team_id'] = team_id
+                            new_row[['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] = shots_yr.loc[shots_yr['player_id']==player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] * fraction
+                            shots_yr = pd.concat([shots_yr, new_row], ignore_index=True)
+
             time.sleep(1)
         except Exception as e:
             print(f'having issues with {player}: {e}')
     
-    traded = pd.DataFrame(traded_players_min).to_sql('traded_players', con, if_exists='append', index=False)
-    
-    #use the fraction of minutes to adjust the number of shot attempts
-    
-
-
+    #shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
+    print(shots_yr.head())
