@@ -35,7 +35,7 @@ cursor.execute("""
 years = ['2024-25']
 #shots dataset
 for yr in years:
-    print(f'getting shots for {yr}')
+    print(f'🏀 getting shots for {yr} ⛹️‍♂️')
     shots_yr = leaguedashplayershotlocations.LeagueDashPlayerShotLocations(season=yr, season_type_all_star='Regular Season').get_data_frames()[0]
 
     #pulling columns of interest for the shots dataset
@@ -46,9 +46,9 @@ for yr in years:
     
     #saving to database
     #shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
-    
+    print("finished getting shots dataset ✅")
 #for each traded player, storing the fraction of minutes played for each team
-    print(f'adjusting for traded players for {yr}')
+    print(f'finding traded player in {yr} season 🔍')
     for player in shots_yr['player_id'].unique():
         
         try:
@@ -64,12 +64,15 @@ for yr in years:
                 
                     team_frac_inf = dict(zip(teamids, fractions))
                     
+                    print(f'adjusting for traded players for {yr} 🔧')
+
                     for team_id, fraction in team_frac_inf.items():
                         #replace the current rows values with adjusted for the team stored in shots_yr
                         if team_id == shots_yr.loc[shots_yr['player_id'] == player, 'team_id'].values[0]:
                             shots_yr.loc[shots_yr['player_id'] == player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] = shots_yr.loc[shots_yr['player_id']==player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] * fraction
                         #create a new row for the player with the team_id and adjusted shot attempts
                         else:
+                            print("adding a new row for player {} for team {}".format(player, team_id))
                             new_row = shots_yr.loc[shots_yr['player_id']==player].copy()
                             new_row['team_id'] = team_id
                             new_row[['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] = shots_yr.loc[shots_yr['player_id']==player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] * fraction
@@ -78,7 +81,7 @@ for yr in years:
             time.sleep(1)
         except Exception as e:
             print(f'having issues with {player}: {e}')
-    print(f'saving shots for {yr} to database')
+    print(f'saving shots for {yr} to database 🖨️')
     #shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
     print(shots_yr.head())
 
