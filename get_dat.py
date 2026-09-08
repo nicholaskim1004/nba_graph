@@ -63,8 +63,6 @@ for yr in years:
                 
                     team_frac_inf = dict(zip(teamids, fractions))
                     
-                    print(f'adjusting for traded players for {yr} 🔧')
-
                     for team_id, fraction in team_frac_inf.items():
                         #replace the current rows values with adjusted for the team stored in shots_yr
                         if team_id == shots_yr.loc[shots_yr['player_id'] == player, 'team_id'].values[0]:
