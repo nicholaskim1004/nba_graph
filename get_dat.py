@@ -16,24 +16,53 @@ from nba_api.stats.endpoints import commonteamroster, leaguedashplayershotlocati
 con = sqlite3.connect('data/nba.db')
 cursor = con.cursor()
 
-def db_connect():
-    con = sqlite3.connect('data/nba.db')
-    return con
+##initalize tables
+#traded players table
+cursor.execute("""
+               CREATE TABLE IF NOT EXISTS traded_players
+               (
+                   player_id INTEGER,
+                   season TEXT, 
+                   team_id INTEGER,
+                   fraction REAL
+                )""")
 
-def db_init():
-    con = db_connect()
-    cursor = con.cursor()
-    cursor.execute("""
-                   CREATE TABLE IF NOT EXISTS shot_proportions """)
+#shots table
+cursor.execute("""
+               CREATE TABLE IF NOT EXISTS shots_yr
+               (
+                   player_id INTEGER,
+                   player_name TEXT,
+                   season TEXT,
+                   team_id INTEGER,
+                   restricted_area_att INTEGER,
+                   paint_att INTEGER,
+                   mid_range_att INTEGER,
+                   left_corner_att INTEGER,
+                   right_corner_att INTEGER,
+                   above_break_att INTEGER,
+                   backcourt_att INTEGER
+               )
+               """)
 
 #run on all years once its working for one year
-#years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
-
-yr = '2024-25'
+years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
 
 #shots dataset
-shots_yr = leaguedashplayershotlocations.LeagueDashPlayerShotLocations(season=yr, season_type_all_star='Regular Season').get_data_frames()[0]
+for yr in years:
+    shots_yr = leaguedashplayershotlocations.LeagueDashPlayerShotLocations(season=yr, season_type_all_star='Regular Season').get_data_frames()[0]
 
+    #pulling columns of interest for the shots dataset
+    shots_yr = shots_yr.iloc[:,[0,1,2,7,10,13,16,19,22,25]]
+    shots_yr['season'] = yr
+    shots_yr = shots_yr.iloc[:,[0,1,10,2,3,4,5,6,7,8,9]]
+    shots_yr.columns = ['player_id','player_name','season','team_id','restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']
+    
+    #saving to database
+    shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
+    
+#for each traded player, storing the fraction of minutes played for each team
+'''
 traded_players_min = {}
 
 for player in shots_yr[('', 'PLAYER_ID')].unique():
@@ -55,83 +84,7 @@ for player in shots_yr[('', 'PLAYER_ID')].unique():
         time.sleep(1)
     except Exception as e:
         print(f'having issues with {player}: {e}')
-            
-#nba data functions
-def get_team_df(team_id,season,season_type='Regular Season',filtered=False):
-    df_values = np.array([])
-    
-    teamplayerinf = TeamPlayerDashboard(team_id=team_id,season=season,season_type_all_star=season_type).get_data_frames()[1]
-    teamplayerinf = teamplayerinf.loc[:,['PLAYER_ID','PLAYER_NAME','MIN']]
-    
-    if filtered and season_type == 'Regular Season':
-        teamplayerinf = teamplayerinf[teamplayerinf['MIN']>=700]
-    elif filtered and season_type != 'Regular Season':
-        teamplayerinf = teamplayerinf[teamplayerinf['MIN']>=100]
-    else:
-        teamplayerinf
-    
-    unique_player_count = 0
-    
-    #get dictionary of all traded players that year
-    #estimate traded players stats respective to their minutes played on the team
-    
-    traded_shot_df = shots_yr[(shots_yr[('', 'PLAYER_ID')].isin(traded_players_min.keys()))&(shots_yr[('','PLAYER_ID')].isin(teamplayerinf['PLAYER_ID'].tolist()))].copy()
-    #filling in nan with zero
-    traded_shot_df.fillna(0,inplace=True)
-    
-    attempt_cols = [7, 10, 13, 16, 19, 22, 25]
+'''          
 
-    fractions = traded_shot_df[('', 'PLAYER_ID')].map(lambda pid: traded_players_min[pid][team_id])
-
-    traded_shot_df.iloc[:, attempt_cols] = (traded_shot_df.iloc[:, attempt_cols].mul(fractions, axis=0)).astype(int)
-    
-    temp = shots_yr[shots_yr[('', 'PLAYER_ID')].isin(teamplayerinf['PLAYER_ID'])].copy()
-
-    # overwrite traded players with adjusted values
-    temp.update(traded_shot_df)
-    
-    for _, row in temp.iterrows():
-
-        player_id = row.iloc[0]
-        
-        unique_player_count += 1
-        df_values = np.append(df_values, int(player_id))
-        df_values = np.append(df_values, row.iloc[[1,7,8,10,11,13,14,16,17,19,20,22,23,25,26]])
-        
-    
-    df = pd.DataFrame(df_values.reshape(unique_player_count, -1), 
-                        columns = ['player_id','player_name','restricited_area_att','restricited_area_pct',
-                                    'in_the_paint_att','in_the_paint_pct','mid_range_att','mid_range_pct',
-                                    'left_corner_att','left_corner_pct','right_corner_att','right_corner_pct',
-                                    'above_break3_att','above_break3_pct','backcourt_att','backcourt_pct'])
-    return df
-
-def get_team_pass_df(team_df, team_id, season, season_type='Regular Season'):
-    pass_row_inf = []
-    
-    pulled = {}
-    for _, trow in team_df.iterrows():
-        while True:
-            try:
-                if trow['player_id'] in pulled.keys():
-                    print(f"Already pulled data for player {trow['player_name']}, skipping...")
-                    break
-                else:
-                    player_info = playerdashptpass.PlayerDashPtPass(team_id=team_id, player_id=int(trow['player_id']), season=season, season_type_all_star=season_type).get_data_frames()[0]
-                    #ensure the pass to player is teammate in dataframe
-                    player_info = player_info[player_info['PASS_TEAMMATE_PLAYER_ID'].isin(team_df['player_id'])]
-                    pulled[trow['player_id']] = True
-                    for _, row in player_info.iterrows():
-                        pass_row_inf.append({'player_id': row['PLAYER_ID'], 'player_name': row['PLAYER_NAME_LAST_FIRST'], 'pass_to_id': row['PASS_TEAMMATE_PLAYER_ID'], 'pass_to': row['PASS_TO'], 'count': row['PASS'], 'proportion': row['FREQUENCY']})
-                    break
-            except Exception as e:
-                print(f"Error occurred: {trow['player_name']}: {e}")
-                print("Retrying after 30 seconds...")
-                time.sleep(30)  # Sleep for 30 seconds to avoid rate limiting
-                get_team_pass_df(team_df, team_id, season)  # Retry the function
-                break
-        time.sleep(1)
-            
-    return pd.DataFrame(pass_row_inf)
 
 
