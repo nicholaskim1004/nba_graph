@@ -35,6 +35,7 @@ cursor.execute("""
 years = ['2024-25']
 #shots dataset
 for yr in years:
+    print(f'getting shots for {yr}')
     shots_yr = leaguedashplayershotlocations.LeagueDashPlayerShotLocations(season=yr, season_type_all_star='Regular Season').get_data_frames()[0]
 
     #pulling columns of interest for the shots dataset
@@ -44,10 +45,10 @@ for yr in years:
     shots_yr.columns = ['player_id','player_name','season','team_id','restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']
     
     #saving to database
-    shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
+    #shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
     
 #for each traded player, storing the fraction of minutes played for each team
-
+    print(f'adjusting for traded players for {yr}')
     for player in shots_yr['player_id'].unique():
         
         try:
@@ -77,6 +78,10 @@ for yr in years:
             time.sleep(1)
         except Exception as e:
             print(f'having issues with {player}: {e}')
-    
+    print(f'saving shots for {yr} to database')
     #shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
     print(shots_yr.head())
+
+#close connection
+cursor.close()
+con.close()
