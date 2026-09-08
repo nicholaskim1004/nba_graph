@@ -31,8 +31,8 @@ cursor.execute("""
                """)
 
 #run on all years once its working for one year
-#years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
-years = ['2024-25']
+years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
+
 #shots dataset
 for yr in years:
     print(f'🏀 getting shots for {yr} ⛹️‍♂️')
@@ -44,10 +44,9 @@ for yr in years:
     shots_yr = shots_yr.iloc[:,[0,1,10,2,3,4,5,6,7,8,9]]
     shots_yr.columns = ['player_id','player_name','season','team_id','restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']
     
-    #saving to database
-    #shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
     print("finished getting shots dataset ✅")
-#for each traded player, storing the fraction of minutes played for each team
+    
+    #for each traded player, storing the fraction of minutes played for each team
     print(f'finding traded player in {yr} season 🔍')
     for player in shots_yr['player_id'].unique():
         
@@ -81,9 +80,10 @@ for yr in years:
             time.sleep(1)
         except Exception as e:
             print(f'having issues with {player}: {e}')
+    
+    #saving to database        
     print(f'saving shots for {yr} to database 🖨️')
-    #shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
-    print(shots_yr.head())
+    shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
 
 #close connection
 cursor.close()
