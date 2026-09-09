@@ -64,4 +64,4 @@ team_list = teams.get_teams()
 query = f"SELECT * FROM shots_yr WHERE season = '{yr}'"
 shots_24 = pd.read_sql_query(query, con)
 
-print(shots_24.loc[shots_24['team_id'] == 1610612737])
+print(get_team_pass_df(shots_24.loc[shots_24['team_id'] == 1610612737], 1610612737, yr))
