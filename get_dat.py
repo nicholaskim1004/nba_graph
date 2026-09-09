@@ -33,6 +33,16 @@ cursor.execute("""
 #run on all years once its working for one year
 years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
 
+attempt_cols = [
+    'restricted_area_att',
+    'paint_att',
+    'mid_range_att',
+    'left_corner_att',
+    'right_corner_att',
+    'above_break_att',
+    'backcourt_att'
+]
+
 #shots dataset
 for yr in years:
     print(f'🏀 getting shots for {yr} ⛹️‍♂️')
@@ -63,17 +73,23 @@ for yr in years:
                 
                     team_frac_inf = dict(zip(teamids, fractions))
                     
+                    #storing the original row for the player to use for creating new rows for each team
+                    player_row = shots_yr[shots_yr['player_id']==player].iloc[0].copy()
+                    
                     for team_id, fraction in team_frac_inf.items():
                         #replace the current rows values with adjusted for the team stored in shots_yr
+                        
+                        adjusted_row = player_row.copy()
+                        adjusted_row['team_id'] = team_id
+                        adjusted_row[attempt_cols] = (adjusted_row[attempt_cols] * fraction).round()
+                        
                         if team_id == shots_yr.loc[shots_yr['player_id'] == player, 'team_id'].values[0]:
-                            shots_yr.loc[shots_yr['player_id'] == player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] = shots_yr.loc[shots_yr['player_id']==player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] * fraction
+                            shots_yr.loc[shots_yr['player_id'] == player, attempt_cols] = adjusted_row[attempt_cols].values
                         #create a new row for the player with the team_id and adjusted shot attempts
                         else:
-                            print("adding a new row for player {} for team {}".format(player, team_id))
-                            new_row = shots_yr.loc[shots_yr['player_id']==player].copy()
-                            new_row['team_id'] = team_id
-                            new_row[['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] = shots_yr.loc[shots_yr['player_id']==player, ['restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']] * fraction
-                            shots_yr = pd.concat([shots_yr, new_row], ignore_index=True)
+                            print(f"adding a new row for player {player} for team {team_id}")
+                            
+                            shots_yr = pd.concat([shots_yr, adjusted_row.to_frame().T], ignore_index=True)
 
             time.sleep(1)
         except Exception as e:
@@ -84,5 +100,6 @@ for yr in years:
     shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
 
 #close connection
+print("finished! 🔥")
 cursor.close()
 con.close()
