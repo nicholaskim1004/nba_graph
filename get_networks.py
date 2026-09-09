@@ -8,6 +8,6 @@ cursor = con.cursor()
 
 yr = '2024-25'
 
-shots_24 = cursor.execute("SELECT * FROM shots_yr WHERE season = ?", (yr,))
-
-print(shots_24.fetchall())
+query = f"SELECT * FROM shots_yr WHERE season = '{yr}'"
+shots_24 = pd.read_sql_query(query, con)
+print(shots_24)
