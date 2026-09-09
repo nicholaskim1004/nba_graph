@@ -77,8 +77,8 @@ for yr in years:
         
         pass_df = get_team_pass_df(shots_yr, team_id, yr)
         #add team_id and season columns to the pass_df
-        pass_df['team_id'] = team_id
-        pass_df['season'] = yr
+        pass_df['team_id'] = int(team_id)
+        pass_df['season'] = str(yr)
         
         if not pass_df.empty:
             pass_df.to_sql('passes_yr', con, if_exists='append', index=False)
