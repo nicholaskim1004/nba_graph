@@ -56,12 +56,27 @@ cursor = con.cursor()
 #               """)
 
 #years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
-yr = '2024-25'
-
+years = ['2024-25']
 team_list = teams.get_teams()
-#print(team_list)
 
-query = f"SELECT * FROM shots_yr WHERE season = '{yr}'"
-shots_24 = pd.read_sql_query(query, con)
-
-print(get_team_pass_df(shots_24.loc[shots_24['team_id'] == 1610612737], 1610612737, yr))
+for yr in years:
+    print(f'🏀 getting passes for {yr} ⛹️‍♂️')
+    for team in team_list:
+        team_id = team['id']
+        team_name = team['full_name']
+        print(f"Getting passes for {team_name} ({team_id}) in {yr} season...")
+        
+        query = f"SELECT * FROM shots_yr WHERE season = '{yr}' AND team_id = {team_id}"
+        shots_yr = pd.read_sql_query(query, con)
+        
+        if shots_yr.empty:
+            print(f"No shot data found for {team_name} in {yr} season. Skipping...")
+            continue
+        
+        pass_df = get_team_pass_df(shots_yr, team_id, yr)
+        
+        if not pass_df.empty:
+            #pass_df.to_sql('team_passes', con, if_exists='append', index=False)
+            print(f"Pass data for {team_name} in {yr} season saved to database.")
+        else:
+            print(f"No pass data found for {team_name} in {yr} season.")
