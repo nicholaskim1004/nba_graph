@@ -12,6 +12,9 @@ from nba_api.stats.endpoints import leaguedashplayershotlocations, PlayerCareerS
 con = sqlite3.connect('data/nba.db')
 cursor = con.cursor()
 
+#drop shots table if it exists to avoid duplicates
+cursor.execute("DROP TABLE IF EXISTS shots_yr")
+
 ##initalize shots table
 cursor.execute("""
                CREATE TABLE IF NOT EXISTS shots_yr

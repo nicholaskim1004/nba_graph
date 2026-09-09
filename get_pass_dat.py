@@ -39,6 +39,9 @@ def get_team_pass_df(team_df, team_id, season, season_type='Regular Season'):
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
 
+#drop passes table if it exists to avoid duplicates
+cursor.execute("DROP TABLE IF EXISTS passes_yr")
+
 #set up table for storing pass proportions between teammates for each team 
 cursor.execute("""
                CREATE TABLE IF NOT EXISTS passes_yr
