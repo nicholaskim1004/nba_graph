@@ -59,10 +59,9 @@ cursor = con.cursor()
 yr = '2024-25'
 
 team_list = teams.get_teams()
-print(team_list)
+#print(team_list)
 
 query = f"SELECT * FROM shots_yr WHERE season = '{yr}'"
 shots_24 = pd.read_sql_query(query, con)
 
-#shots_24.loc[]
-
+print(shots_24.loc[shots_24['team_id'] == 1610612737])
