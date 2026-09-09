@@ -1,6 +1,5 @@
 import time
 import sqlite3
-import numpy as np
 import pandas as pd
 
 from nba_api.stats.static import teams
@@ -41,22 +40,22 @@ con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
 
 #set up table for storing pass proportions between teammates for each team 
-#cursor.execute("""
-#               CREATE TABLE IF NOT EXISTS team_passes
-#               (
-#                   player_id INTEGER,
-#                   player_name TEXT,
-#                   season TEXT,
-#                   team_id INTEGER,
-#                   pass_to_id INTEGER,
-#                   pass_to TEXT,
-#                   count INTEGER,
-#                   proportion REAL
-#               )
-#               """)
+cursor.execute("""
+               CREATE TABLE IF NOT EXISTS passes_yr
+               (
+                   player_id INTEGER,
+                   player_name TEXT,
+                   season TEXT,
+                   team_id INTEGER,
+                   pass_to_id INTEGER,
+                   pass_to TEXT,
+                   count INTEGER,
+                   proportion REAL
+               )
+               """)
 
-#years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
-years = ['2024-25']
+years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
+
 team_list = teams.get_teams()
 
 for yr in years:
@@ -76,7 +75,8 @@ for yr in years:
         pass_df = get_team_pass_df(shots_yr, team_id, yr)
         
         if not pass_df.empty:
-            #pass_df.to_sql('team_passes', con, if_exists='append', index=False)
-            print(f"Pass data for {team_name} in {yr} season saved to database.")
+            pass_df.to_sql('passes_yr', con, if_exists='append', index=False)
+            print(f"Pass data for {team_name} in {yr} season saved to database 💾")
         else:
-            print(f"No pass data found for {team_name} in {yr} season.")
+            print(f"No pass data found for {team_name} in {yr} season")
+print("finished! 🔥")
