@@ -85,11 +85,11 @@ for yr in years:
                         adjusted_row = player_row.copy()
                         
                         #safeguard to ensure values are stored in correct format in database
-                        adjusted_row['player_id'] = int(team_id)
+                        adjusted_row['player_id'] = int(player_row['player_id'])
                         adjusted_row['team_id'] = int(team_id)
                         adjusted_row['season'] = str(yr)
-                        adjusted_row[attempt_cols] = (adjusted_row[attempt_cols] * fraction).round()
-                        
+                        adjusted_row[attempt_cols] = (adjusted_row[attempt_cols] * fraction).round().astype('Int64')
+                     
                         if team_id == shots_yr.loc[shots_yr['player_id'] == player, 'team_id'].values[0]:
                             shots_yr.loc[shots_yr['player_id'] == player, attempt_cols] = adjusted_row[attempt_cols].values
                         #create a new row for the player with the team_id and adjusted shot attempts
@@ -97,11 +97,11 @@ for yr in years:
                             print(f"adding a new row for player {player} for team {team_id}")
                             
                             #adding safeguard so values are stored in correct format in database
-                            shots_yr['player_id'] = shots_yr['player_id'].astype(int)
-                            shots_yr['team_id'] = shots_yr['team_id'].astype(int)
+                            shots_yr['player_id'] = shots_yr['player_id'].astype('Int64')
+                            shots_yr['team_id'] = shots_yr['team_id'].astype('Int64')
 
                             for col in attempt_cols:
-                                shots_yr[col] = shots_yr[col].astype(int)
+                                shots_yr[col] = shots_yr[col].astype('Int64')
                             shots_yr = pd.concat([shots_yr, adjusted_row.to_frame().T], ignore_index=True)
 
             time.sleep(1)
