@@ -90,8 +90,8 @@ for yr in years:
                         adjusted_row['season'] = str(yr)
                         adjusted_row[attempt_cols] = (adjusted_row[attempt_cols] * fraction).round().astype('Int64')
                      
-                        if team_id == shots_yr.loc[shots_yr['player_id'] == player, 'team_id'].values[0]:
-                            shots_yr.loc[shots_yr['player_id'] == player, attempt_cols] = adjusted_row[attempt_cols].values
+                        if team_id == player_row['team_id']:
+                            shots_yr.loc[(shots_yr['player_id'] == player) & (shots_yr['team_id'] == player_row['team_id']), attempt_cols] = adjusted_row[attempt_cols].values
                         #create a new row for the player with the team_id and adjusted shot attempts
                         else:
                             print(f"adding a new row for player {player} for team {team_id}")
