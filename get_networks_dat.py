@@ -78,8 +78,14 @@ for yr in years:
         #creating edge between each player
         for _,row in team_passes.iterrows():
             G.add_edge(row['player_name'],row['pass_to'], weight= 0.5 * row['proportion'])
-                    
-        pageranks = nx.pagerank(G, weight="weight").items()
+                 
+        print(
+            f"{yr} | {team['full_name']} | "
+            f"nodes={G.number_of_nodes()} | "
+            f"edges={G.number_of_edges()} | "
+            f"self_loops={nx.number_of_selfloops(G)}"
+        )   
+        pageranks = nx.pagerank(G, weight="weight", max_iter=500).items()
 
         network_layout = nx.spring_layout(G)
         
@@ -97,9 +103,7 @@ for yr in years:
                         columns=['x_cord', 'y_cord']
                     ).reset_index(names='node_name')
         
-        pageranks_df = pd.merge(pageranks_df,coord_df, on='node_name', how='left')
-        print(pageranks_df)
-        
+        pageranks_df = pd.merge(pageranks_df,coord_df, on='node_name', how='left')        
         
         pageranks_df.to_sql('pageranks_yr', con, if_exists='append', index=False)
         print(f'saving pagerank info for {team['full_name']} in {yr} to database 💾')
