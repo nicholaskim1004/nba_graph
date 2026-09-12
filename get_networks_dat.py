@@ -66,6 +66,7 @@ for yr in years:
         
         #filtering passes df to just cur team
         team_passes = passes_yr[passes_yr['team_id']==teamid]
+        print(set(team_passes['player_name']))
         
         print(team_passes.head())
         
