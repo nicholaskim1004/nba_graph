@@ -23,11 +23,11 @@ cursor.execute("""
                )
                """)
 
-query = "SELECT * FROM shots_yr"
-shots_yr = pd.read_sql_query(query, con)
+query_sh = "SELECT * FROM shots_yr"
+shots_yr = pd.read_sql_query(query_sh, con)
 
-query = "SELECT * FROM passes_yr"
-passes_yr = pd.read_sql_query(query, con)
+query_ps = "SELECT * FROM passes_yr"
+passes_yr = pd.read_sql_query(query_ps, con)
 
 team_list = teams.get_teams()
 team_list = team_list[0:2]
@@ -65,7 +65,7 @@ for yr in years:
         proportion_shots = proportion_shots.iloc[:,[8,7,0,1,2,3,4,5,6]]
         
         #filtering passes df to just cur team
-        team_passes = passes_yr[passes_yr['team_id']==teamid]
+        team_passes = passes_yr[(passes_yr['team_id']==teamid)&(passes_yr['season']==yr)]
                         
         #initalizing network
         G = nx.DiGraph()
