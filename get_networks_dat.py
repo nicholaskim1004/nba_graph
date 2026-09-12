@@ -34,8 +34,7 @@ team_list = team_list[0:2]
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
-#years = ['2020-21','2021-22', '2022-23', '2024-25', '2025-26']
-years = ['2024-25']
+years = ['2020-21','2021-22', '2022-23', '2024-25', '2025-26']
 
 for yr in years:
     print(f'🏀 getting network information for {yr} ⛹️‍♂️')
@@ -82,9 +81,6 @@ for yr in years:
                     
         pageranks = nx.pagerank(G, weight="weight").items()
 
-        print(team_passes.shape)
-        print(G.number_of_nodes(), G.number_of_edges())
-        print(sorted(G.edges(data='weight'), key=lambda x: x[2], reverse=True)[:20])
         network_layout = nx.spring_layout(G)
         
         #converting pagerank to dataframe
