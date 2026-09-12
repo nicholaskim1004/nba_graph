@@ -79,9 +79,7 @@ for yr in years:
         #creating edge between each player
         for _,row in team_passes.iterrows():
             G.add_edge(row['player_name'],row['pass_to'], weight= 0.5 * row['proportion'])
-            
-        nx.draw(G, with_labels=True, font_size=10, font_weight='bold')
-        
+                    
         pageranks = nx.pagerank(G, weight="weight").items()
         network_layout = nx.spring_layout(G)
         
@@ -99,7 +97,7 @@ for yr in years:
                         columns=['x_cord', 'y_cord']
                     ).reset_index(names='node_name')
         
-        pageranks_df = pd.DataFrame(pageranks_df,coord_df, on='node_name', how='left')
+        pageranks_df = pd.merge(pageranks_df,coord_df, on='node_name', how='left')
         print(pageranks_df)
         
         
