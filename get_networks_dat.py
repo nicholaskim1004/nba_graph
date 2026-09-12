@@ -107,5 +107,5 @@ for yr in years:
         
 print('finished 🚀')        
 #close connection and cursor
-con.close()
 cursor.close()
+con.close()
