@@ -1,3 +1,5 @@
+##script to get the pass frequencies from one player to each teammate 
+
 import time
 import sqlite3
 import pandas as pd
