@@ -68,7 +68,7 @@ for yr in years:
         team_passes = passes_yr[passes_yr['team_id']==teamid]
         
         #initalizing network
-        G = nx.Digraph()
+        G = nx.DiGraph()
         
         #creating node between each player and each shot loction type 
         for _,row in proportion_shots.iterrows():
