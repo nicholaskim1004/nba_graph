@@ -30,9 +30,7 @@ query = "SELECT * FROM passes_yr"
 passes_yr = pd.read_sql_query(query, con)
 
 team_list = teams.get_teams()
-team_list = team_list[0]
-print(team_list)
-print(team_list[0]['full_name'])
+team_list = team_list[0:2]
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
