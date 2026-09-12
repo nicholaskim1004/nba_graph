@@ -88,3 +88,6 @@ for yr in years:
         else:
             print(f"No pass data found for {team_name} in {yr} season")
 print("finished! 🔥")
+
+cursor.close()
+con.close()
