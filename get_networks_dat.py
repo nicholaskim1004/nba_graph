@@ -81,7 +81,8 @@ for yr in years:
             G.add_edge(row['player_name'],row['pass_to'], weight= 0.5 * row['proportion'])
                     
         pageranks = nx.pagerank(G, weight="weight").items()
-        print(pageranks)
+
+        print(G.nodes())
         print(G.number_of_nodes(), G.number_of_edges())
         print(sorted(G.edges(data='weight'), key=lambda x: x[2], reverse=True)[:20])
         network_layout = nx.spring_layout(G)
