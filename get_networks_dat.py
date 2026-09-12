@@ -100,6 +100,8 @@ for yr in years:
                     ).reset_index(names='node_name')
         
         pageranks_df = pd.DataFrame(pageranks_df,coord_df, on='node_name', how='left')
+        print(pageranks_df)
+        
         
         pageranks_df.to_sql('pageranks_yr', con, if_exists='append', index=False)
         print(f'saving pagerank info for {team['full_name']} in {yr} to database 💾')
