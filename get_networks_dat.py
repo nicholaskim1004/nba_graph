@@ -82,7 +82,7 @@ for yr in years:
                     
         pageranks = nx.pagerank(G, weight="weight").items()
 
-        print(proportion_shots.shape)
+        print(team_passes.shape)
         print(G.number_of_nodes(), G.number_of_edges())
         print(sorted(G.edges(data='weight'), key=lambda x: x[2], reverse=True)[:20])
         network_layout = nx.spring_layout(G)
