@@ -64,10 +64,10 @@ for yr in years:
         #reorganzing df
         proportion_shots = proportion_shots.iloc[:,[8,7,0,1,2,3,4,5,6]]
         
-        print(proportion_shots.head())
-        
         #filtering passes df to just cur team
         team_passes = passes_yr[passes_yr['team_id']==teamid]
+        
+        print(team_passes.head())
         
         #initalizing network
         G = nx.DiGraph()
