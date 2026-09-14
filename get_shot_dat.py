@@ -57,13 +57,16 @@ for yr in years:
     shots_yr['season'] = yr
     shots_yr = shots_yr.iloc[:,[0,1,10,2,3,4,5,6,7,8,9]]
     shots_yr.columns = ['player_id','player_name','season','team_id','restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']
+    shots_yr['min'] = pd.NA
     
     print("finished getting shots dataset ✅")
     
     #for each traded player, storing the fraction of minutes played for each team
     print(f'finding traded player in {yr} season 🔍')
     
-    minutes_df = {}
+    minutes_dic = {}
+    
+    index = 0
     
     for player in shots_yr['player_id'].unique():
         
@@ -76,7 +79,7 @@ for yr in years:
                 if len(team_inf) > 1:
                     #storing the player_id, team_id, and total minutes to later add onto the shots df
                     for _, row in team_inf.iterrows():
-                        minutes_df[(int(player), int(row['TEAM_ID']))] = int(row['MIN'])
+                        minutes_dic[(int(player), int(row['TEAM_ID']))] = int(row['MIN'])
 
                     total = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']==0)]
                     fractions = team_inf.loc[:,'MIN'].values.flatten()/total.loc[:,'MIN'].values
@@ -112,8 +115,8 @@ for yr in years:
                                 shots_yr[col] = shots_yr[col].astype('Int64')
                             shots_yr = pd.concat([shots_yr, adjusted_row.to_frame().T], ignore_index=True)
                     else:
-                        for _, row in team_inf.iterrows():
-                            minutes_df[(int(player), int(row['TEAM_ID']))] = int(row['MIN'])
+                        shots_yr.loc[index,'min'] = team_inf['MIN'].values[0]
+            index += 1
 
             time.sleep(1)
         except Exception as e:
@@ -126,13 +129,16 @@ for yr in years:
     minutes_df = pd.DataFrame(
         [
             [player_id, team_id, min_count]
-            for (player_id, team_id), min_count in minutes_df.items()
+            for (player_id, team_id), min_count in minutes_dic.items()
         ],
         columns=['player_id', 'team_id', 'min']
     )
-    #adding minutes column to shots
-    shots_yr = pd.merge(shots_yr,minutes_df,on=['player_id','team_id'],how='left')
+    #adding minutes column to shots df
+    shots_yr = pd.merge(shots_yr,minutes_df.loc[:,['player_id','min']],on='player_id',how='left')
     print(shots_yr.head())
+    
+    #removing players with nan as min
+    shots_yr = shots_yr[~shots_yr['min'].isna()]
     
     #saving to database        
     print(f'saving shots for {yr} to database 🖨️')
