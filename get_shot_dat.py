@@ -125,7 +125,7 @@ for yr in years:
             [player_id, team_id, min_count]
             for (player_id, team_id), min_count in minutes_df.items()
         ],
-        columns=['player_id', 'team_id', 'MIN']
+        columns=['player_id', 'team_id', 'min']
     )
     #adding minutes column to shots
     shots_yr = pd.merge(shots_yr,minutes_df,on=['player_id','team_id'],how='left')
