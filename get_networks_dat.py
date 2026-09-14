@@ -30,7 +30,6 @@ query_ps = "SELECT * FROM passes_yr"
 passes_yr = pd.read_sql_query(query_ps, con)
 
 team_list = teams.get_teams()
-team_list = team_list[0:2]
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
@@ -79,13 +78,7 @@ for yr in years:
         for _,row in team_passes.iterrows():
             G.add_edge(row['player_name'],row['pass_to'], weight= 0.5 * row['proportion'])
                  
-        print(
-            f"{yr} | {team['full_name']} | "
-            f"nodes={G.number_of_nodes()} | "
-            f"edges={G.number_of_edges()} | "
-            f"self_loops={nx.number_of_selfloops(G)}"
-        )   
-        pageranks = nx.pagerank(G, weight="weight", max_iter=500).items()
+        pageranks = nx.pagerank(G, weight="weight", max_iter=1000).items()
 
         network_layout = nx.spring_layout(G)
         
