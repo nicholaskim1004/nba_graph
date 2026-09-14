@@ -119,6 +119,9 @@ for yr in years:
         except Exception as e:
             print(f'having issues with {player}: {e}')
     
+    #getting rid of nans in shot attempts
+    shots_yr.fillna(0,inplace=True)
+    
     #converting minutes_dic into df
     minutes_df = pd.DataFrame(
         [
