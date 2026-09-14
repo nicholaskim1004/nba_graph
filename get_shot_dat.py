@@ -75,7 +75,8 @@ for yr in years:
                 
                 if len(team_inf) > 1:
                     #storing the player_id, team_id, and total minutes to later add onto the shots df
-                    minutes_df[(player,team_inf['TEAM_ID'])] = team_inf['MIN']
+                    for _, row in team_inf.iterrows():
+                        minutes_df[(int(player), int(row['TEAM_ID']))] = int(row['MIN'])
 
                     total = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']==0)]
                     fractions = team_inf.loc[:,'MIN'].values.flatten()/total.loc[:,'MIN'].values
@@ -111,7 +112,8 @@ for yr in years:
                                 shots_yr[col] = shots_yr[col].astype('Int64')
                             shots_yr = pd.concat([shots_yr, adjusted_row.to_frame().T], ignore_index=True)
                     else:
-                        minutes_df[(player,team_inf['TEAM_ID'])] = team_inf['MIN']
+                        for _, row in team_inf.iterrows():
+                            minutes_df[(int(player), int(row['TEAM_ID']))] = int(row['MIN'])
 
             time.sleep(1)
         except Exception as e:
