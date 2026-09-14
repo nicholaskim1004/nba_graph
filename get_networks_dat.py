@@ -77,7 +77,8 @@ for yr in years:
         #creating edge between each player
         for _,row in team_passes.iterrows():
             G.add_edge(row['player_name'],row['pass_to'], weight= 0.5 * row['proportion'])
-                 
+        
+        print(nx.is_planar(G), nx.is_bipartite(G))     
         pageranks = nx.pagerank(G, weight="weight", max_iter=1000).items()
 
         network_layout = nx.spring_layout(G)
