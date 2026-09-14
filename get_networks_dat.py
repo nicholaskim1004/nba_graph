@@ -1,4 +1,5 @@
 import sqlite3
+import math
 import pandas as pd
 import networkx as nx
 
@@ -78,7 +79,13 @@ for yr in years:
         for _,row in team_passes.iterrows():
             G.add_edge(row['player_name'],row['pass_to'], weight= 0.5 * row['proportion'])
         
-        print(nx.is_planar(G), nx.is_bipartite(G))     
+        weights = nx.get_edge_attributes(G, "weight")
+        nan_edges = [edge for edge, w in weights.items() if math.isnan(w)]
+
+        if nan_edges:
+            print(f"Edges with NaN weights: {nan_edges}")
+        else:
+            print("All edge weights are valid numbers.")     
         pageranks = nx.pagerank(G, weight="weight", max_iter=1000).items()
 
         network_layout = nx.spring_layout(G)
