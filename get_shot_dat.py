@@ -22,6 +22,7 @@ cursor.execute("""
                    player_id INTEGER,
                    player_name TEXT,
                    season TEXT,
+                   min INTEGER,
                    team_id INTEGER,
                    restricted_area_att INTEGER,
                    paint_att INTEGER,
@@ -61,6 +62,9 @@ for yr in years:
     
     #for each traded player, storing the fraction of minutes played for each team
     print(f'finding traded player in {yr} season 🔍')
+    
+    minutes_df = {}
+    
     for player in shots_yr['player_id'].unique():
         
         try:
@@ -70,6 +74,9 @@ for yr in years:
                 team_inf = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']!=0)]
                 
                 if len(team_inf) > 1:
+                    #storing the player_id, team_id, and total minutes to later add onto the shots df
+                    minutes_df[(player,team_inf['TEAM_ID'])] = team_inf['MIN']
+
                     total = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']==0)]
                     fractions = team_inf.loc[:,'MIN'].values.flatten()/total.loc[:,'MIN'].values
                     teamids = team_inf['TEAM_ID'].values
@@ -103,10 +110,24 @@ for yr in years:
                             for col in attempt_cols:
                                 shots_yr[col] = shots_yr[col].astype('Int64')
                             shots_yr = pd.concat([shots_yr, adjusted_row.to_frame().T], ignore_index=True)
+                    else:
+                        minutes_df[(player,team_inf['TEAM_ID'])] = team_inf['MIN']
 
             time.sleep(1)
         except Exception as e:
             print(f'having issues with {player}: {e}')
+    
+    #converting minutes_dic into df
+    minutes_df = pd.DataFrame(
+        [
+            [player_id, team_id, min_count]
+            for (player_id, team_id), min_count in minutes_df.items()
+        ],
+        columns=['player_id', 'team_id', 'MIN']
+    )
+    #adding minutes column to shots
+    shots_yr = pd.merge(shots_yr,minutes_df,on=['player_id','team_id'],how='left')
+    print(shots_yr.head())
     
     #saving to database        
     print(f'saving shots for {yr} to database 🖨️')
