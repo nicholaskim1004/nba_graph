@@ -75,7 +75,7 @@ for yr in years:
                 team_inf = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']!=0)]
                 
                 if len(team_inf) == 1:
-                    shots_yr.loc[shots_yr['player_id'] == player,'min'] = team_inf['MIN'].values[0]
+                    shots_yr.loc[shots_yr['player_id'] == player,'min'] = int(team_inf['MIN'].values[0])
                 
                 else:    
                     #storing the player_id, team_id, and total minutes to later add onto the shots df
