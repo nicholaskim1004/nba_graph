@@ -74,7 +74,10 @@ for yr in years:
             if not inf.empty:
                 team_inf = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']!=0)]
                 
-                if len(team_inf) > 1:
+                if len(team_inf) == 1:
+                    shots_yr.loc[shots_yr['player_id'] == player,'min'] = team_inf['MIN'].values[0]
+                
+                else:    
                     #storing the player_id, team_id, and total minutes to later add onto the shots df
                     for _, row in team_inf.iterrows():
                         minutes_dic[(int(player), int(row['TEAM_ID']))] = int(row['MIN'])
@@ -115,20 +118,16 @@ for yr in years:
                             for col in attempt_cols:
                                 shots_yr[col] = shots_yr[col].astype('Int64')
                             shots_yr = pd.concat([shots_yr, adjusted_row.to_frame().T], ignore_index=True)
-                    else:
-                        shots_yr.loc[shots_yr['player_id'] == player,'min'] = team_inf['MIN'].values[0]
 
             time.sleep(1)
         except Exception as e:
             print(f'having issues with {player}: {e}')
     
-    #getting rid of nans in shot attempts
-    shots_yr.fillna(0,inplace=True)
-    
-    print(shots_yr.head())
-    
-    #removing players with nan as min
+    #filtering out players without min
     shots_yr = shots_yr[~shots_yr['min'].isna()]
+    
+    #getting rid of nans in shot
+    shots_yr.fillna(0,inplace=True)
     
     #saving to database        
     print(f'saving shots for {yr} to database 🖨️')
