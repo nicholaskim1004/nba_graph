@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd # type: ignore[import-not-found]
 import dash_cytoscape as cyto  # type: ignore[import-not-found]
 
-from dash import Dash, html, dcc, Input, Output # type: ignore[import-not-found]
+from dash import Dash, html, dcc, Input, Output, callback # type: ignore[import-not-found]
 from nba_api.stats.static import teams
 
 con = sqlite3.connect('data/nba.db', timeout=10)
@@ -21,30 +21,6 @@ team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
 
 seasons = pageranks_yr['season'].unique()
-
-#convert pagerank data into JSON
-nodes = [{
-    'data': {
-        'id': str(row['node_name']),
-        'label': row['node_name'],
-        'pagerank': row['pagerank']
-    },
-    'position': {
-        'x': row['x_cord'],
-        'y': row['y_cord']
-    }
-} for _,row in pageranks_yr.iterrows()]
-
-#edge weights to display (proportion of pass)
-edges = [{
-    'data': {
-        'source': row['player_name'],
-        'target': row['pass_to'],
-        'weight': row['proportion']
-    }
-} for row in passes_yr_fil.iterrows()]
-
-elements = nodes + edges
 
 app = Dash()
 
@@ -87,7 +63,7 @@ app.layout = html.Div([
     
 ])
 
-@callable(
+@callback(
     Output("graph_networks", "elements"),
     Input("team-dropdown", "value"),
     Input("season-slider", "value")
@@ -102,13 +78,13 @@ def update_network(selected_teams, selected_season):
     nodes = [
         {
             "data": {
-                "id": str(row["node"]),
-                "label": row["node"],
+                "id": str(row["node_name"]),
+                "label": row["node_name"],
                 "pagerank": row["pagerank"]
             },
             "position": {
-                "x": row["x"],
-                "y": row["y"]
+                "x": row["x_cord"],
+                "y": row["y_cord"]
             }
         }
         for _, row in selected_pageranks.iterrows()
@@ -122,7 +98,7 @@ def update_network(selected_teams, selected_season):
             'target': row['pass_to'],
             'weight': row['proportion']
         }
-    } for row in selected_passes_yr.iterrows()]
+    } for _, row in selected_passes_yr.iterrows()]
 
     return nodes + edges
 
