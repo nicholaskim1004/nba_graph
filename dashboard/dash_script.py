@@ -13,10 +13,16 @@ app = Dash()
 
 app.layout = html.Div([
     html.H1("NBA GRAPH NETWORKS"),
-        html.Div([
-        html.P("How are NBA Offenses different? Do teams follow a similar pattern? Do strategies change in the Playoffs?"),
-        html.P("All these questions can be answered using network structure!")
-    ])
+    html.Div(
+        "How are NBA Offenses different? Do teams follow a similar pattern? "
+        "Do strategies change in the Playoffs? All these questions can be "
+        "answered using network structure! This dashboard will display the "
+        "results from a network for a given season and team.",
+        style={
+            "fontSize": "20px",
+            "marginTop": "0px"
+        }
+    )
 ])
 
 if __name__ == "__main__":
