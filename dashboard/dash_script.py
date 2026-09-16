@@ -11,12 +11,13 @@ pageranks_yr = pd.read_sql_query(query_sh, con)
 
 app = Dash()
 
-app.layout = html.Div(childern = [
-    html.H1(children = "NBA GRAPH NETWORKS"),
-    html.Div(children = ["How are NBA Offense's different? Do teams follow a similar pattern? Do strategies change in the Playoffs?",
-              
-              "All these questions can be answered using network structure! This dashboard will display the results from a network for a given season, and team."])
+app.layout = html.Div([
+    html.H1("NBA GRAPH NETWORKS"),
+        html.Div([
+        html.P("How are NBA Offenses different? Do teams follow a similar pattern? Do strategies change in the Playoffs?"),
+        html.P("All these questions can be answered using network structure!")
+    ])
 ])
 
-if __name__ == "main":
+if __name__ == "__main__":
     app.run(debug=True)
