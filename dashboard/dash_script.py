@@ -30,6 +30,8 @@ app.layout = html.Div([
         }
     ),
     
+    html.Br(),
+    
     html.Label('Team'),
     dcc.Dropdown(options=sorted(team_list,reverse=False),value=[team_list[0]],multi=True),
     
