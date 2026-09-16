@@ -131,7 +131,7 @@ for yr in years:
     
     #saving to database        
     print(f'saving shots for {yr} to database 🖨️')
-    shots_yr.to_sql('shots_yr', con, if_exists='append', index=False)
+    shots_yr.to_sql('shots_playoffs_yr', con, if_exists='append', index=False)
 
 #close connection
 print("finished! 🔥")
