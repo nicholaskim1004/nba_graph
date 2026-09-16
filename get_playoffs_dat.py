@@ -188,7 +188,7 @@ print("finished pulling shots data! 🔥")
 print("starting passes dataframe pull for playoffs 🏆")
 team_list = teams.get_teams()
 #filter to teams that appear in playoffs
-playoff_ids = shots_yr[(                     '',           'TEAM_ID')].unique()
+playoff_ids = shots_yr['team_id'].unique()
 
 team_list = [team for team in team_list if team['id'] in playoff_ids]
 
