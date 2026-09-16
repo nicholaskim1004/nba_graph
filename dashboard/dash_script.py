@@ -27,10 +27,10 @@ app.layout = html.Div([
             "marginTop": "0px"
         }
     ),
-    children = [
-        html.Label('Dropdown'),
-        dcc.Dropdown(team_list,team_list[0])
-    ]
+    
+    html.Label('Team'),
+    dcc.Dropdown(options=team_list,value=team_list[0])
+    
 ])
 
 if __name__ == "__main__":
