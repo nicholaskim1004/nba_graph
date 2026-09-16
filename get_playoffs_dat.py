@@ -69,7 +69,7 @@ for yr in years:
     for player in shots_yr['player_id'].unique():
         
         try:
-            inf = PlayerCareerStats(player).get_data_frames()[0]
+            inf = PlayerCareerStats(player).get_data_frames()[2]
 
             if not inf.empty:
                 team_inf = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']!=0)]
