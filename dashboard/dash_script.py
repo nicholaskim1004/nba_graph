@@ -2,12 +2,16 @@ import sqlite3
 import pandas as pd
 
 from dash import Dash, html, dcc
+from nba_api.stats.static import teams
 
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
 
 query_sh = "SELECT * FROM pageranks_yr"
 pageranks_yr = pd.read_sql_query(query_sh, con)
+
+team_df = pd.DataFrame(teams.get_teams())
+team_list = team_df['full_name'].to_numpy()
 
 app = Dash()
 
@@ -22,7 +26,11 @@ app.layout = html.Div([
             "fontSize": "20px",
             "marginTop": "0px"
         }
-    )
+    ),
+    children = [
+        html.Label('Dropdown'),
+        dcc.Dropdown(team_list,team_list[0])
+    ]
 ])
 
 if __name__ == "__main__":
