@@ -1,7 +1,7 @@
 import sqlite3
 import pandas as pd
 
-from dashboard.dash_script import Dash, html, dcc
+from dash import Dash, html, dcc
 
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
