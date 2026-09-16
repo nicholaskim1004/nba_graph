@@ -3,7 +3,7 @@
 
 import time
 import sqlite3
-import pandas as pd
+import pandas as pd # type: ignore[import-not-found]
 
 from nba_api.stats.static import teams
 from nba_api.stats.endpoints import leaguedashplayershotlocations, PlayerCareerStats, playerdashptpass

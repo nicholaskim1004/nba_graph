@@ -1,7 +1,8 @@
 import sqlite3
-import pandas as pd
+import pandas as pd # type: ignore[import-not-found]
+import dash_cytoscape as cyto  # type: ignore[import-not-found]
 
-from dash import Dash, html, dcc
+from dash import Dash, html, dcc # type: ignore[import-not-found]
 from nba_api.stats.static import teams
 
 con = sqlite3.connect('data/nba.db', timeout=10)
@@ -14,6 +15,9 @@ team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
 
 seasons = pageranks_yr['season'].unique()
+
+#convert pagerank data into JSON
+
 
 app = Dash()
 
@@ -41,7 +45,11 @@ app.layout = html.Div([
     dcc.Slider(min=0,
                max=len(seasons)-1,
                marks={i: seasons[i] for i in range(len(seasons)) },
-               value=len(seasons)-1)
+               value=len(seasons)-1),
+    
+    html.Br(),
+    
+    cyto.Cytoscape()
     
 ])
 

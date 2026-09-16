@@ -1,7 +1,7 @@
 import sqlite3
 import math
-import pandas as pd
-import networkx as nx
+import pandas as pd # type: ignore[import-not-found]
+import networkx as nx # type: ignore[import-not-found]
 
 from nba_api.stats.static import teams
 
