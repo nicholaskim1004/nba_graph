@@ -46,12 +46,16 @@ for yr in years:
         teamid = team['id']
         
         team_shots = shots_cur[shots_cur['team_id']==teamid]
-        total_shots = team_shots.iloc[:,4:].sum(axis=1)
+        
+        #filtering out players who don't play that much
+        team_shots = team_shots[team_shots['min']>200]
+        
+        total_shots = team_shots.iloc[:,5:].sum(axis=1)
         
         #replacing zeros with 1 so won't be NAN when dividing
         total_shots = total_shots.replace(0,1)
         
-        proportion_shots = team_shots.iloc[:,4:].div(total_shots, axis=0)
+        proportion_shots = team_shots.iloc[:,5:].div(total_shots, axis=0)
         
         #creating a dataframe that stores the player_id and player_name from passes_yr df to ensure consistent naming
         team_to_id_map = pd.DataFrame({'player_id':passes_yr['pass_to_id'].unique(), 'player_name': passes_yr['pass_to'].unique()})
@@ -65,6 +69,9 @@ for yr in years:
         
         #filtering passes df to just cur team
         team_passes = passes_yr[(passes_yr['team_id']==teamid)&(passes_yr['season']==yr)]
+        
+        #making sure the players included in team_passes matches that in shots
+        team_passes[(team_passes['pass_to_id'].isin(team_shots['player_id']))&(team_passes['player_id'].isin(team_shots['player_id']))]             
                         
         #initalizing network
         G = nx.DiGraph()
@@ -78,16 +85,11 @@ for yr in years:
         #creating edge between each player
         for _,row in team_passes.iterrows():
             G.add_edge(row['player_name'],row['pass_to'], weight= 0.5 * row['proportion'])
+           
+        pageranks = nx.pagerank(G, weight="weight").items()
         
-        weights = nx.get_edge_attributes(G, "weight")
-        nan_edges = [edge for edge, w in weights.items() if math.isnan(w)]
-
-        if nan_edges:
-            print(f"Edges with NaN weights: {nan_edges}")
-        else:
-            print("All edge weights are valid numbers.")     
-        pageranks = nx.pagerank(G, weight="weight", max_iter=1000).items()
-
+        print(sorted(pageranks, reverse=True))
+        
         network_layout = nx.spring_layout(G)
         
         #converting pagerank to dataframe
