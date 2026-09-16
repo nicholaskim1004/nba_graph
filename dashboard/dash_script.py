@@ -33,6 +33,8 @@ app.layout = html.Div([
     html.Label('Team'),
     dcc.Dropdown(options=sorted(team_list,reverse=False),value=[team_list[0]],multi=True),
     
+    html.Br(),
+    
     html.Label('Season'),
     dcc.Slider(min=0,
                max=len(seasons)-1,
