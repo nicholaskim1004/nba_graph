@@ -88,8 +88,6 @@ for yr in years:
            
         pageranks = nx.pagerank(G, weight="weight").items()
         
-        print(sorted(pageranks, reverse=True))
-        
         network_layout = nx.spring_layout(G)
         
         #converting pagerank to dataframe
