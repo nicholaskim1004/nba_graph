@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd # type: ignore[import-not-found]
 import dash_cytoscape as cyto  # type: ignore[import-not-found]
 
-from dash import Dash, html, dcc, Input, Output, callback # type: ignore[import-not-found]
+from dash import Dash, html, dcc, Input, Output, callback, dash_table # type: ignore[import-not-found]
 from nba_api.stats.static import teams
 
 con = sqlite3.connect('data/nba.db', timeout=10)
@@ -59,7 +59,10 @@ app.layout = html.Div([
     
     html.Br(),
     
-    cyto.Cytoscape(id='graph_networks',
+    html.Div(
+        style = {'display': 'flex', 'flex_direction': 'row', 'gap': '20px'},
+        children = [
+            html.Div(cyto.Cytoscape(id='graph_networks',
                    elements=[],
                    layout={'name':'preset'},
                    stylesheet = [
@@ -74,13 +77,15 @@ app.layout = html.Div([
                         {
                            'selector': '.shot',
                             'style': {
-                                'background-color': '#FF2C2C'
+                                'background-color': '#FF2C2C',
+                                'opacity': 0.95
                             }
                         },
                         {
                            'selector': '.player',
                             'style': {
-                                'background-color': '#B6E3FF'
+                                'background-color': '#B6E3FF',
+                                'opacity': 0.95
                             }
                         },
                        {
@@ -90,9 +95,20 @@ app.layout = html.Div([
                            }
                        }
                    ],
-                   style={"width": "65%", "height": "700px"})
-    
+                   style={"width": "65%", "height": "700px"})),
+            html.Div(
+                style={'width': '25%'},
+                children=[
+                    dash_table.DataTable(
+                        data = pageranks_yr[(pageranks_yr['team_id']==value)&(pageranks_yr['season']==season)].iloc[:,0:3],
+                        columns = [{'name': i, 'id': i} for i in pageranks_yr.iloc[:,0:3].columns]
+                    )
+                ]
+            )
+            ]
+    )
 ])
+
 
 @app.callback(
     Output("graph_networks", "elements"),
