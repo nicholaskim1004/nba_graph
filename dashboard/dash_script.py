@@ -109,7 +109,7 @@ def update_network(selected_teams, selected_season):
             "data": {
                 "id": str(row["node_name"]),
                 "label": row["node_name"],
-                "pagerank": float(row["pagerank"]) * 50
+                "pagerank": float(row["pagerank"]) * 1000
             },
             "classes": "shot" if row["node_name"] in diff_shots else "player",
             "position": {
