@@ -70,17 +70,19 @@ app.layout = html.Div([
                         {
                            'selector': '.shot',
                             'style': {
-                                'background-color': 'red'
+                                'background-color': 'red',
+                                'opacity': .5
                             }
                         },
                         {
                            'selector': '.player',
                             'style': {
-                                'background-color': 'blue'
+                                'background-color': 'blue',
+                                'opacity': .5
                             }
                         },
                        {
-                           'selector': 'edge',
+                           'selector': 'edges',
                            'style': {
                                'source-arrow-shape':'triangle'
                            }
