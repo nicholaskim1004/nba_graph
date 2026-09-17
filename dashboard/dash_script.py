@@ -40,7 +40,8 @@ app.layout = html.Div([
     dcc.Dropdown(id='team-dropdown',
                  options=sorted(team_list,reverse=False),
                  value=[team_list[0]],
-                 multi=True),
+                 multi=True,
+                 style={'width': '50%'}),
     
     html.Br(),
     
@@ -49,14 +50,18 @@ app.layout = html.Div([
                min=0,
                max=len(seasons)-1,
                marks={i: seasons[i] for i in range(len(seasons)) },
-               value=len(seasons)-1),
+               value=len(seasons)-1,
+               tooltip={
+                   "style":{'width': '50%',
+                            'color':'LightSteelBlue'}
+                }),
     
     html.Br(),
     
     cyto.Cytoscape(id='graph_networks',
                    elements=[],
                    layout={'name':'preset'},
-                   style={"width": "100%", "height": "700px"})
+                   style={"width": "75%", "height": "700px"})
     
 ])
 
@@ -82,8 +87,8 @@ def update_network(selected_teams, selected_season):
                 "pagerank": row["pagerank"]
             },
             "position": {
-                "x": float(row["x_cord"]) * 100,
-                "y": float(row["y_cord"]) * 100
+                "x": float(row["x_cord"]) * 800,
+                "y": float(row["y_cord"]) * 800
             }
         }
         for _, row in selected_pageranks.iterrows()
