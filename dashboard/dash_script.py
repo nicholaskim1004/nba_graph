@@ -95,9 +95,9 @@ def update_network(selected_teams, selected_season):
     
     edges = [{
         'data': {
-            'source': row['player_name'],
-            'target': row['pass_to'],
-            'weight': row['proportion']
+            'source': row['source'],
+            'target': row['target'],
+            'weight': row['weight']
         }
     } for _, row in selected_edges.iterrows()]
 
