@@ -155,6 +155,11 @@ for yr in years:
         print(f'saving pagerank info for {team['full_name']} in {yr} to database 💾')
         
         edges = nx.to_pandas_edgelist(G, source='source', target='target')
+        
+        #adding season and team_id columns since it doesn't come with
+        edges['season'] = str(yr)
+        edges['team_id'] = int(teamid)
+        
         edges.to_sql('network_edges', con, if_exists='append', index=False)
         print(f'saving edge weight info for {team['full_name']} in {yr} to database 💽')
         
@@ -249,6 +254,11 @@ for yr in years:
         print(f'saving pagerank info for {team['full_name']} in {yr} to database 💾')
         
         edges = nx.to_pandas_edgelist(G, source='source', target='target')
+        
+        #adding season and team_id columns since it doesn't come with
+        edges['season'] = str(yr)
+        edges['team_id'] = int(teamid)
+        
         edges.to_sql('network_edges_playoffs', con, if_exists='append', index=False)
         print(f'saving edge weight info for {team['full_name']} in {yr} to database 💽')
         
