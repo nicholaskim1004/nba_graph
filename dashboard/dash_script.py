@@ -70,15 +70,15 @@ app.layout = html.Div([
                         {
                            'selector': '.shot',
                             'style': {
-                                'background-color': 'red',
-                                'opacity': .5
+                                'background-color': '#FF2C2C',
+                                'opacity': .95
                             }
                         },
                         {
                            'selector': '.player',
                             'style': {
-                                'background-color': 'blue',
-                                'opacity': .5
+                                'background-color': '#B6E3FF',
+                                'opacity': .95
                             }
                         },
                        {
