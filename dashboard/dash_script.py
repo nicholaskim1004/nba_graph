@@ -19,6 +19,8 @@ team_list = team_df['full_name'].to_numpy()
 
 seasons = pageranks_yr['season'].unique()
 
+diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
+
 app = Dash()
 
 app.layout = html.Div([
@@ -56,6 +58,34 @@ app.layout = html.Div([
     cyto.Cytoscape(id='graph_networks',
                    elements=[],
                    layout={'name':'preset'},
+                   stylesheet = [
+                       {
+                           'selector': 'node',
+                           'style': {
+                               'label':'data(label)',
+                               'width':'data(pagerank)',
+                               'height':'data(pagerank)'
+                           }
+                       },
+                        {
+                           'selector': '.shot',
+                            'style': {
+                                'background-color': 'red'
+                            }
+                        },
+                        {
+                           'selector': '.player',
+                            'style': {
+                                'background-color': 'blue'
+                            }
+                        },
+                       {
+                           'selector': 'edge',
+                           'style': {
+                               'source-arrow-shape':'triangle'
+                           }
+                       }
+                   ],
                    style={"width": "75%", "height": "700px"})
     
 ])
@@ -79,8 +109,9 @@ def update_network(selected_teams, selected_season):
             "data": {
                 "id": str(row["node_name"]),
                 "label": row["node_name"],
-                "pagerank": row["pagerank"]
+                "pagerank": float(row["pagerank"]) * 50
             },
+            "classes": "shot" if row["node_name"] in diff_shots else "player",
             "position": {
                 "x": float(row["x_cord"]) * 800,
                 "y": float(row["y_cord"]) * 800
