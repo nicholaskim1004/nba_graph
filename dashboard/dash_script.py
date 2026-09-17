@@ -11,11 +11,8 @@ cursor = con.cursor()
 query_page = "SELECT * FROM pageranks_yr"
 pageranks_yr = pd.read_sql_query(query_page, con)
 
-query_edge = "SELECT * FROM passes_yr"
-passes_yr = pd.read_sql_query(query_edge, con)
-
-#ensuring passes_yr only contains the players used as nodes in pagerank
-passes_yr_fil = passes_yr[(passes_yr['player_name'].isin(pageranks_yr['node_name']))&(passes_yr['pass_to'].isin(pageranks_yr['node_name']))]
+query_edge = "SELECT * FROM network_edges"
+edges = pd.read_sql_query(query_edge, con)
 
 team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
@@ -92,7 +89,9 @@ def update_network(selected_teams, selected_season):
         for _, row in selected_pageranks.iterrows()
     ]
     
-    selected_passes_yr = passes_yr_fil[(passes_yr_fil['team_id'].isin(sel_teams_ids))&(passes_yr_fil['season']==season)]
+    selected_edges = edges[
+        (edges['team_id'].isin(sel_teams_ids))&(edges['season']==season)
+    ]
     
     edges = [{
         'data': {
@@ -100,7 +99,7 @@ def update_network(selected_teams, selected_season):
             'target': row['pass_to'],
             'weight': row['proportion']
         }
-    } for _, row in selected_passes_yr.iterrows()]
+    } for _, row in selected_edges.iterrows()]
 
     return nodes + edges
 

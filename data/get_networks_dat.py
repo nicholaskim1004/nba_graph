@@ -24,6 +24,20 @@ cursor.execute("""
                )
                """)
 
+#tables to store the edge weight information for the networks
+cursor.execute("DROP TABLE IF EXISTS network_edges")
+
+cursor.execute("""
+               CREATE TABLE IF NOT EXISTS network_edges
+               (
+                   season TEXT,
+                   team_id INTEGER,
+                   source TEXT,
+                   target TEXT,
+                   weight REAL
+               )
+               """)
+
 #drop pagerank table if it exists to avoid duplicates
 cursor.execute("DROP TABLE IF EXISTS pageranks_playoffs_yr")
 
@@ -37,6 +51,19 @@ cursor.execute("""
                    pagerank REAL,
                    x_cord REAL,
                    y_cord REAL
+               )
+               """)
+
+cursor.execute("DROP TABLE IF EXISTS network_edges_playoffs")
+
+cursor.execute("""
+               CREATE TABLE IF NOT EXISTS network_edges_playoffs
+               (
+                   season TEXT,
+                   team_id INTEGER,
+                   source TEXT,
+                   target TEXT,
+                   weight REAL
                )
                """)
 
@@ -126,6 +153,11 @@ for yr in years:
         
         pageranks_df.to_sql('pageranks_yr', con, if_exists='append', index=False)
         print(f'saving pagerank info for {team['full_name']} in {yr} to database 💾')
+        
+        edges = nx.to_pandas_edgelist(G, source='source', target='target')
+        edges.to_sql('network_edges', con, if_exists='append', index=False)
+        print(f'saving edge weight info for {team['full_name']} in {yr} to database 💽')
+        
     print(f'finished saving info for season {yr}...')
         
 print('finished 🚀')   
@@ -215,6 +247,11 @@ for yr in years:
         
         pageranks_df.to_sql('pageranks_playoffs_yr', con, if_exists='append', index=False)
         print(f'saving pagerank info for {team['full_name']} in {yr} to database 💾')
+        
+        edges = nx.to_pandas_edgelist(G, source='source', target='target')
+        edges.to_sql('network_edges_playoffs', con, if_exists='append', index=False)
+        print(f'saving edge weight info for {team['full_name']} in {yr} to database 💽')
+        
     print(f'finished saving info for season {yr}...')
         
 print('finished 🚀')
