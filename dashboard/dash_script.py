@@ -12,7 +12,7 @@ query_page = "SELECT * FROM pageranks_yr"
 pageranks_yr = pd.read_sql_query(query_page, con)
 
 query_edge = "SELECT * FROM network_edges"
-edges = pd.read_sql_query(query_edge, con)
+edges_yr = pd.read_sql_query(query_edge, con)
 
 team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
@@ -89,8 +89,8 @@ def update_network(selected_teams, selected_season):
         for _, row in selected_pageranks.iterrows()
     ]
     
-    selected_edges = edges[
-        (edges['team_id'].isin(sel_teams_ids))&(edges['season']==season)
+    selected_edges = edges_yr[
+        (edges_yr['team_id'].isin(sel_teams_ids))&(edges_yr['season']==season)
     ]
     
     edges = [{
