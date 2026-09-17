@@ -82,8 +82,8 @@ def update_network(selected_teams, selected_season):
                 "pagerank": row["pagerank"]
             },
             "position": {
-                "x": row["x_cord"],
-                "y": row["y_cord"]
+                "x": float(row["x_cord"]) * 100,
+                "y": float(row["y_cord"]) * 100
             }
         }
         for _, row in selected_pageranks.iterrows()
