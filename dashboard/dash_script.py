@@ -39,8 +39,7 @@ app.layout = html.Div([
     html.Label('Team'),
     dcc.Dropdown(id='team-dropdown',
                  options=sorted(team_list,reverse=False),
-                 value=[team_list[0]],
-                 multi=True,
+                 value=team_list[0],
                  style={'width': '50%'}),
     
     html.Br(),
@@ -50,11 +49,7 @@ app.layout = html.Div([
                min=0,
                max=len(seasons)-1,
                marks={i: seasons[i] for i in range(len(seasons)) },
-               value=len(seasons)-1,
-               tooltip={
-                   "style":{'width': '50%',
-                            'color':'LightSteelBlue'}
-                }),
+               value=len(seasons)-1),
     
     html.Br(),
     
@@ -71,7 +66,7 @@ app.layout = html.Div([
     Input("season-slider", "value")
 )
 def update_network(selected_teams, selected_season):
-    sel_teams_ids = team_df[team_df['full_name'].isin(selected_teams)]['id'].to_numpy()
+    sel_teams_ids = team_df[team_df['full_name']==selected_teams]['id'].to_numpy()
     season = seasons[selected_season]
     
     selected_pageranks = pageranks_yr[
