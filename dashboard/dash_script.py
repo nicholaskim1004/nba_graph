@@ -24,13 +24,17 @@ diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Cor
 app = Dash()
 
 app.layout = html.Div([
-    html.H1("NBA GRAPH NETWORKS"),
+    html.H1("NBA GRAPH NETWORKS",
+            style={
+                "fontFamily": 'sans-serif',
+                "fontWeight": 'bold'}),
     html.Div(
         "How are NBA Offenses different? Do teams follow a similar pattern? "
         "Do strategies change in the Playoffs? All these questions can be "
         "answered using network structure! This dashboard will display the "
         "results from a network for a given season and team.",
         style={
+            "fontFamily": 'sans-serif',
             "fontSize": "20px",
             "marginTop": "0px"
         }
