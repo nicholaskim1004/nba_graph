@@ -90,7 +90,7 @@ app.layout = html.Div([
                            }
                        }
                    ],
-                   style={"width": "75%", "height": "700px"})
+                   style={"width": "65%", "height": "700px"})
     
 ])
 
