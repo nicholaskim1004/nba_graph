@@ -63,15 +63,17 @@ app.layout = html.Div([
     
 ])
 
-@callback(
+@app.callback(
     Output("graph_networks", "elements"),
     Input("team-dropdown", "value"),
     Input("season-slider", "value")
 )
 def update_network(selected_teams, selected_season):
     sel_teams_ids = team_df[team_df['full_name'].isin(selected_teams)]['id'].to_numpy()
+    season = seasons[selected_season]
+    
     selected_pageranks = pageranks_yr[
-        (pageranks_yr["team_id"].isin(sel_teams_ids))&(pageranks_yr['season']==selected_season)
+        (pageranks_yr["team_id"].isin(sel_teams_ids))&(pageranks_yr['season']==season)
     ]
 
     # Create nodes
@@ -90,7 +92,7 @@ def update_network(selected_teams, selected_season):
         for _, row in selected_pageranks.iterrows()
     ]
     
-    selected_passes_yr = passes_yr_fil[(passes_yr_fil['team_id'].isin(sel_teams_ids))&(passes_yr_fil['season']==selected_season)]
+    selected_passes_yr = passes_yr_fil[(passes_yr_fil['team_id'].isin(sel_teams_ids))&(passes_yr_fil['season']==season)]
     
     edges = [{
         'data': {
