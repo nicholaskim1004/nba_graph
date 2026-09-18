@@ -60,55 +60,75 @@ app.layout = html.Div([
     html.Br(),
     
     html.Div(
-        style = {'display': 'flex', 'flex_direction': 'row', 'gap': '20px'},
-        children = [
-            html.Div(cyto.Cytoscape(
-                   id='graph_networks',
-                   elements=[],
-                   layout={'name':'preset'},
-                   stylesheet = [
-                       {
-                           'selector': 'node',
-                           'style': {
-                               'label':'data(label)',
-                               'width':'data(pagerank)',
-                               'height':'data(pagerank)'
-                           }
-                       },
-                        {
-                           'selector': '.shot',
-                            'style': {
-                                'background-color': '#FF2C2C',
-                                'opacity': 0.95
-                            }
-                        },
-                        {
-                           'selector': '.player',
-                            'style': {
-                                'background-color': '#B6E3FF',
-                                'opacity': 0.95
-                            }
-                        },
-                       {
-                           'selector': 'edges',
-                           'style': {
-                               'source-arrow-shape':'triangle'
-                           }
-                       }
-                   ],
-                   style={"width": "65%", "height": "700px"})),
-            html.Div(
-                style={'width': '25%'},
-                children=[
-                    dash_table.DataTable(
-                        id='pagerank_table',
-                        data = [],
-                        columns = [{'name': i, 'id': i} for i in pageranks_yr.iloc[:,0:3].columns]
-                    )
+    style={
+        'display': 'flex',
+        'flexDirection': 'row',
+        'gap': '20px',
+        'width': '100%'
+    },
+    children=[
+        # LEFT: Cytoscape
+        html.Div(
+            cyto.Cytoscape(
+                id='graph_networks',
+                elements=[],
+                layout={'name': 'preset'},
+                stylesheet=[
+                    {
+                        'selector': 'node',
+                        'style': {
+                            'label': 'data(label)',
+                            'width': 'data(pagerank)',
+                            'height': 'data(pagerank)'
+                        }
+                    },
+                    {
+                        'selector': '.shot',
+                        'style': {
+                            'background-color': '#FF2C2C',
+                            'opacity': 0.95
+                        }
+                    },
+                    {
+                        'selector': '.player',
+                        'style': {
+                            'background-color': '#B6E3FF',
+                            'opacity': 0.95
+                        }
+                    },
+                    {
+                        'selector': 'edge',
+                        'style': {
+                            'source-arrow-shape': 'triangle'
+                        }
+                    }
+                ],
+                style={
+                    'width': '100%',
+                    'height': '700px'
+                }
+            ),
+            style={
+                'width': '70%'
+            }
+        ),
+
+        # RIGHT: PageRank table
+        html.Div(
+            dash_table.DataTable(
+                id='pagerank_table',
+                data=[],
+                columns=[
+                    {'name': i, 'id': i}
+                    for i in pageranks_yr.loc[:, ['season','node_name','pagerank']].columns
                 ]
-            )
-            ]
-    )
+            ),
+            style={
+                'width': '30%'
+            }
+        )
+    ]
+)
 ])
 
 
@@ -169,7 +189,7 @@ def update_pagerank_table(selected_team, selected_season):
         (pageranks_yr["team_id"].isin(sel_teams_ids))&(pageranks_yr['season']==season)
     ]
     
-    return selected_pageranks.iloc[:,0:3].to_dict('records')
+    return selected_pageranks.loc[:,['season','node_name','pagerank']].to_dict('records')
 
 if __name__ == "__main__":
     app.run(debug=True)
