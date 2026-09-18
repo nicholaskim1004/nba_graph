@@ -169,7 +169,7 @@ def update_pagerank_table(selected_team, selected_season):
         (pageranks_yr["team_id"].isin(sel_teams_ids))&(pageranks_yr['season']==season)
     ]
     
-    return selected_pageranks.iloc[:,0:3]
+    return selected_pageranks.iloc[:,0:3].to_json()
 
 if __name__ == "__main__":
     app.run(debug=True)
