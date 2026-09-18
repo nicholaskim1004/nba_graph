@@ -157,7 +157,7 @@ def update_network(selected_teams, selected_season):
     return nodes + edges
 
 @app.callback(
-    Output('pagerank_table'),
+    Output('pagerank_table', 'data'),
     Input("team-dropdown", "value"),
     Input("season-slider", "value")
 )
