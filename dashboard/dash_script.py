@@ -98,10 +98,10 @@ app.layout = html.Div([
                    ],
                    style={"width": "65%", "height": "700px"})),
             html.Div(
-                id='pagerank_table',
                 style={'width': '25%'},
                 children=[
                     dash_table.DataTable(
+                        id='pagerank_table',
                         data = [],
                         columns = [{'name': i, 'id': i} for i in pageranks_yr.iloc[:,0:3].columns]
                     )
@@ -169,7 +169,7 @@ def update_pagerank_table(selected_team, selected_season):
         (pageranks_yr["team_id"].isin(sel_teams_ids))&(pageranks_yr['season']==season)
     ]
     
-    return selected_pageranks.iloc[:,0:3].to_json()
+    return selected_pageranks.iloc[:,0:3].to_dict('records')
 
 if __name__ == "__main__":
     app.run(debug=True)
