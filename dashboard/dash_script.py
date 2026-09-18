@@ -62,7 +62,8 @@ app.layout = html.Div([
     html.Div(
         style = {'display': 'flex', 'flex_direction': 'row', 'gap': '20px'},
         children = [
-            html.Div(cyto.Cytoscape(id='graph_networks',
+            html.Div(cyto.Cytoscape(
+                   id='graph_networks',
                    elements=[],
                    layout={'name':'preset'},
                    stylesheet = [
@@ -97,10 +98,11 @@ app.layout = html.Div([
                    ],
                    style={"width": "65%", "height": "700px"})),
             html.Div(
+                id='pagerank_table',
                 style={'width': '25%'},
                 children=[
                     dash_table.DataTable(
-                        data = pageranks_yr[(pageranks_yr['team_id']==value)&(pageranks_yr['season']==season)].iloc[:,0:3],
+                        data = [],
                         columns = [{'name': i, 'id': i} for i in pageranks_yr.iloc[:,0:3].columns]
                     )
                 ]
@@ -153,6 +155,21 @@ def update_network(selected_teams, selected_season):
     } for _, row in selected_edges.iterrows()]
 
     return nodes + edges
+
+    @app.callback(
+        Output('pagerank_table'),
+        Input("team-dropdown", "value"),
+        Input("season-slider", "value")
+    )
+    def update_pagerank_table(selected_team, selected_season):
+        sel_teams_ids = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
+        season = seasons[selected_season]
+        
+        selected_pageranks = pageranks_yr[
+            (pageranks_yr["team_id"].isin(sel_teams_ids))&(pageranks_yr['season']==season)
+        ]
+        
+        return selected_pageranks.iloc[:,0:3]
 
 if __name__ == "__main__":
     app.run(debug=True)
