@@ -121,8 +121,7 @@ app.layout = html.Div([
                 columns=[
                     {'name': i, 'id': i}
                     for i in pageranks_yr.loc[:, ['season','node_name','pagerank']].columns
-                ],
-                row_selectable='single'
+                ]
             ),
             style={
                 'width': '30%'
