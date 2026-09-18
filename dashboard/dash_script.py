@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd # type: ignore[import-not-found]
 import dash_cytoscape as cyto  # type: ignore[import-not-found]
+import numpy as np # type: ignore[import-not-found]
 
 from dash import Dash, html, dcc, Input, Output, callback, dash_table # type: ignore[import-not-found]
 from nba_api.stats.static import teams
@@ -154,6 +155,7 @@ def update_network(selected_teams, selected_season):
                 "pagerank": float(row["pagerank"]) * 1000
             },
             "classes": "shot" if row["node_name"] in diff_shots else "player",
+            "selected": False,
             "position": {
                 "x": float(row["x_cord"]) * 800,
                 "y": float(row["y_cord"]) * 800
@@ -190,6 +192,58 @@ def update_pagerank_table(selected_team, selected_season):
     ]
     
     return selected_pageranks.loc[:,['season','node_name','pagerank']].sort_values('pagerank',ascending=False).to_dict('records')
+
+#highlighting node for highlighted cell in datatable
+@app.callback(
+    Output('graph_networks', 'style_sheet'),
+    Input('pagerank_table', 'active_cell'),
+    Input('pagerank_table', 'data'),
+    Input('graph_networks', 'elements')
+)
+def highlightnode(active_cell, table_data, node_elements):
+    base_stylesheet = [
+                    {
+                        'selector': 'node',
+                        'style': {
+                            'label': 'data(label)',
+                            'width': 'data(pagerank)',
+                            'height': 'data(pagerank)'
+                        }
+                    },
+                    {
+                        'selector': '.shot',
+                        'style': {
+                            'background-color': '#FF2C2C',
+                            'opacity': 0.95
+                        }
+                    },
+                    {
+                        'selector': '.player',
+                        'style': {
+                            'background-color': '#B6E3FF',
+                            'opacity': 0.95
+                        }
+                    },
+                    {
+                        'selector': 'edge',
+                        'style': {
+                            'source-arrow-shape': 'triangle'
+                        }
+                    }
+                ]
+
+    if active_cell is None:
+        return base_stylesheet
+    if active_cell['column_id'] != 'node_name':
+        return base_stylesheet
+    
+    nodes = node_elements[0]
+    node_selected_loc = np.where(nodes['data'][nodes['data']['id']== active_cell['row']['node_name']])
+    nodes['selected'][node_selected_loc] = True
+    
+    
+    return 
+
 
 if __name__ == "__main__":
     app.run(debug=True)
