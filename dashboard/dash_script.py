@@ -121,7 +121,8 @@ app.layout = html.Div([
                 columns=[
                     {'name': i, 'id': i}
                     for i in pageranks_yr.loc[:, ['season','node_name','pagerank']].columns
-                ]
+                ],
+                row_selectable='single'
             ),
             style={
                 'width': '30%'
@@ -193,3 +194,4 @@ def update_pagerank_table(selected_team, selected_season):
 
 if __name__ == "__main__":
     app.run(debug=True)
+    
