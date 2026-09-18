@@ -156,20 +156,20 @@ def update_network(selected_teams, selected_season):
 
     return nodes + edges
 
-    @app.callback(
-        Output('pagerank_table'),
-        Input("team-dropdown", "value"),
-        Input("season-slider", "value")
-    )
-    def update_pagerank_table(selected_team, selected_season):
-        sel_teams_ids = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
-        season = seasons[selected_season]
-        
-        selected_pageranks = pageranks_yr[
-            (pageranks_yr["team_id"].isin(sel_teams_ids))&(pageranks_yr['season']==season)
-        ]
-        
-        return selected_pageranks.iloc[:,0:3]
+@app.callback(
+    Output('pagerank_table'),
+    Input("team-dropdown", "value"),
+    Input("season-slider", "value")
+)
+def update_pagerank_table(selected_team, selected_season):
+    sel_teams_ids = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
+    season = seasons[selected_season]
+    
+    selected_pageranks = pageranks_yr[
+        (pageranks_yr["team_id"].isin(sel_teams_ids))&(pageranks_yr['season']==season)
+    ]
+    
+    return selected_pageranks.iloc[:,0:3]
 
 if __name__ == "__main__":
     app.run(debug=True)
