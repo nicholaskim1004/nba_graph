@@ -243,15 +243,13 @@ def highlightnode(active_cell, table_data, node_elements):
     print('test!!!!!')
     node_ids = [str(nodes[i]['data']['id']) for i in range(len(nodes))]
     node_selected_loc = node_ids.index(str(active_node_name))
-    nodes[node_selected_loc]['data']['selected'] = True
 
-    print("Selected node:", active_node_name)
-    print("Node index:", node_selected_loc)
-    print("Node:", nodes[node_selected_loc])
+    # Select only the matching node
+    nodes[node_selected_loc]['data']['selected'] = True
 
     # Add highlight style
     node_highlight = {
-        'selector': 'node[selected = true]',
+        'selector': f'node[id = "{active_node_name}"]',
         'style': {
             'border-width': '12px',
             'border-color': '#172B3C',
