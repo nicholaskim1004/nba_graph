@@ -241,13 +241,17 @@ def highlightnode(active_cell, table_data, node_elements):
 
     active_node_name = table_data[active_cell['row']]['node_name']
     print('test!!!!!')
-    print([nodes[i]['data'] for i in range(len(nodes))])
-    
-    node_selected_loc = np.where(nodes['data'][nodes['data']['id']== active_cell['row']['node_name']])
-    nodes['selected'][node_selected_loc] = True
-    
+    node_ids = [str(nodes[i]['data']['id']) for i in range(len(nodes))]
+    node_selected_loc = node_ids.index(str(active_node_name))
+    nodes[node_selected_loc]['data']['selected'] = True
+
+    print("Selected node:", active_node_name)
+    print("Node index:", node_selected_loc)
+    print("Node:", nodes[node_selected_loc])
+
+    # Add highlight style
     node_highlight = {
-        'selector': '.selected',
+        'selector': 'node[selected = true]',
         'style': {
             'border-width': '12px',
             'border-color': '#172B3C',
@@ -255,7 +259,7 @@ def highlightnode(active_cell, table_data, node_elements):
         }
     }
     
-    base_stylesheet = base_stylesheet.append(node_highlight)
+    base_stylesheet.append(node_highlight)
     
     return base_stylesheet
 
