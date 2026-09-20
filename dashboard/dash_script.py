@@ -238,9 +238,11 @@ def highlightnode(active_cell, table_data, node_elements):
         return base_stylesheet
     
     nodes = node_elements
-    print(nodes[0])
-    print(active_cell)
-    print(table_data[active_cell['row']])
+
+    active_node_name = table_data[active_cell['row']]['node_name']
+    print('test!!!!!')
+    print([nodes[i]['data'] for i in range(len(nodes))])
+    
     node_selected_loc = np.where(nodes['data'][nodes['data']['id']== active_cell['row']['node_name']])
     nodes['selected'][node_selected_loc] = True
     
