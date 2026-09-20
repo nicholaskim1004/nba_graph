@@ -152,10 +152,10 @@ def update_network(selected_teams, selected_season):
             "data": {
                 "id": str(row["node_name"]),
                 "label": row["node_name"],
-                "pagerank": float(row["pagerank"]) * 1000
+                "pagerank": float(row["pagerank"]) * 1000,
+                "selected": False
             },
             "classes": "shot" if row["node_name"] in diff_shots else "player",
-            "selected": False,
             "position": {
                 "x": float(row["x_cord"]) * 800,
                 "y": float(row["y_cord"]) * 800
@@ -195,11 +195,12 @@ def update_pagerank_table(selected_team, selected_season):
 
 #highlighting node for highlighted cell in datatable
 @app.callback(
-    Output('graph_networks', 'style_sheet'),
+    Output('graph_networks', 'stylesheet'),
     Input('pagerank_table', 'active_cell'),
+    Input('pagerank_table', 'data'),
     Input('graph_networks', 'elements')
 )
-def highlightnode(active_cell, node_elements):
+def highlightnode(active_cell, table_data, node_elements):
     base_stylesheet = [
                     {
                         'selector': 'node',
@@ -236,7 +237,10 @@ def highlightnode(active_cell, node_elements):
     if active_cell['column_id'] != 'node_name':
         return base_stylesheet
     
-    nodes = node_elements[0]
+    nodes = node_elements
+    print(nodes[0])
+    print(active_cell)
+    print(table_data[active_cell['row']])
     node_selected_loc = np.where(nodes['data'][nodes['data']['id']== active_cell['row']['node_name']])
     nodes['selected'][node_selected_loc] = True
     
