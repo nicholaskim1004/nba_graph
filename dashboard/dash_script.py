@@ -197,10 +197,9 @@ def update_pagerank_table(selected_team, selected_season):
 @app.callback(
     Output('graph_networks', 'style_sheet'),
     Input('pagerank_table', 'active_cell'),
-    Input('pagerank_table', 'data'),
     Input('graph_networks', 'elements')
 )
-def highlightnode(active_cell, table_data, node_elements):
+def highlightnode(active_cell, node_elements):
     base_stylesheet = [
                     {
                         'selector': 'node',
@@ -241,8 +240,18 @@ def highlightnode(active_cell, table_data, node_elements):
     node_selected_loc = np.where(nodes['data'][nodes['data']['id']== active_cell['row']['node_name']])
     nodes['selected'][node_selected_loc] = True
     
+    node_highlight = {
+        'selector': '.selected',
+        'style': {
+            'border-width': '12px',
+            'border-color': '#172B3C',
+            'background-color': '#172B3C'
+        }
+    }
     
-    return 
+    base_stylesheet = base_stylesheet.append(node_highlight)
+    
+    return base_stylesheet
 
 
 if __name__ == "__main__":
