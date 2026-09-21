@@ -253,7 +253,8 @@ def highlightnode(active_cell, table_data, node_elements):
         'style': {
             'border-width': '12px',
             'border-color': '#172B3C',
-            'background-color': '#172B3C'
+            'background-color': '#172B3C',
+            'opacity': 1
         }
     }
     
@@ -261,6 +262,12 @@ def highlightnode(active_cell, table_data, node_elements):
     
     return base_stylesheet
 
+#highlighting row element after clicking node on cytoscape
+@app.callback(
+    Output()
+)
+def switch_table_element():
+    return 
 
 if __name__ == "__main__":
     app.run(debug=True)
