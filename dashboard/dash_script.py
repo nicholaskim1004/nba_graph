@@ -197,8 +197,8 @@ def update_pagerank_table(selected_team, selected_season):
 @app.callback(
     Output('graph_networks', 'stylesheet'),
     Input('pagerank_table', 'active_cell'),
-    Input('pagerank_table', 'data'),
-    Input('graph_networks', 'elements')
+    State('pagerank_table', 'data'),
+    State('graph_networks', 'elements')
 )
 def highlightnode(active_cell, table_data, node_elements):
     base_stylesheet = [
@@ -272,6 +272,7 @@ def switch_table_element(node_data, table_data):
     if node_data is None:
         return None
     
+    print("NODE CLICK:", node_data)
     node_name = node_data['id']
     
     for i, row in enumerate(table_data):
