@@ -136,7 +136,14 @@ app.layout = html.Div([
             }
         )
     ]
-)
+    ),
+    html.Div(
+        dash_table.DataTable(
+            id='passes_weight_table',
+            data=[],
+            columns={['season','node_name','edge_to','weight']}
+        )
+    )
 ])
 
 
@@ -225,7 +232,7 @@ def with_highlight(node_name):
         }
     }]
 
-
+#highlights the correct node or element based on clicked node or element
 @app.callback(
     Output('graph_networks', 'stylesheet'),
     Output('pagerank_table', 'active_cell'),
@@ -259,6 +266,17 @@ def sync_selection(tap_node, active_cell, table_data):
 
     name = table_data[active_cell['row']]['node_name']
     return with_highlight(name), no_update, no_update, None
+
+#show datatable with edge weights from node ordered from highest to lowest
+@app.callback(
+    Output('passes_weight_table', 'data'),
+    Input("team-dropdown", "value"),
+    Input("season-slider", "value"),
+    Input('pagerank_table', 'selected_cells')
+)
+def update_pass_table(selected_team, selected_season, selected_node):
+    
+    return 
 
 if __name__ == "__main__":
     app.run(debug=True)
