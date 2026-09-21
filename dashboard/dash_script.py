@@ -3,7 +3,7 @@ import pandas as pd # type: ignore[import-not-found]
 import dash_cytoscape as cyto  # type: ignore[import-not-found]
 import numpy as np # type: ignore[import-not-found]
 
-from dash import Dash, html, dcc, Input, Output, callback, dash_table # type: ignore[import-not-found]
+from dash import Dash, html, dcc, Input, Output, callback, dash_table, State # type: ignore[import-not-found]
 from nba_api.stats.static import teams
 
 con = sqlite3.connect('data/nba.db', timeout=10)
@@ -240,7 +240,7 @@ def highlightnode(active_cell, table_data, node_elements):
     nodes = node_elements
 
     active_node_name = table_data[active_cell['row']]['node_name']
-    print('test!!!!!')
+
     node_ids = [str(nodes[i]['data']['id']) for i in range(len(nodes))]
     node_selected_loc = node_ids.index(str(active_node_name))
 
@@ -264,10 +264,25 @@ def highlightnode(active_cell, table_data, node_elements):
 
 #highlighting row element after clicking node on cytoscape
 @app.callback(
-    Output()
+    Output('pagerank_table', 'active_cell'),
+    Input('graph_networks', 'tapNodeData'),
+    State('pagerank_table', 'data')
 )
-def switch_table_element():
-    return 
+def switch_table_element(node_data, table_data):
+    if node_data is None:
+        return None
+    
+    node_name = node_data['id']
+    
+    for i, row in enumerate(table_data):
+        if row['node_name'] == node_name:
+            return {
+                'row': i,
+                'column': 1,
+                'column_id': 'node_name'
+            }
+
+    return None
 
 if __name__ == "__main__":
     app.run(debug=True)
