@@ -122,6 +122,13 @@ app.layout = html.Div([
                 columns=[
                     {'name': i, 'id': i}
                     for i in pageranks_yr.loc[:, ['season','node_name','pagerank']].columns
+                ],
+                style_data_conditional = [
+                    {
+                    'if': {'state': 'active'},
+                    'backgroundColor': '#FF0000',
+                    'color': 'white'
+                    }
                 ]
             ),
             style={
@@ -234,19 +241,10 @@ def highlightnode(active_cell, table_data, node_elements):
 
     if active_cell is None:
         return base_stylesheet
-    if active_cell['column_id'] != 'node_name':
-        return base_stylesheet
-    
-    nodes = node_elements
 
     active_node_name = table_data[active_cell['row']]['node_name']
-
-    node_ids = [str(nodes[i]['data']['id']) for i in range(len(nodes))]
-    node_selected_loc = node_ids.index(str(active_node_name))
-
-    # Select only the matching node
-    nodes[node_selected_loc]['data']['selected'] = True
-
+    print(active_node_name)
+    
     # Add highlight style
     node_highlight = {
         'selector': f'node[id = "{active_node_name}"]',
