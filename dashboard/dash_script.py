@@ -3,7 +3,7 @@ import pandas as pd # type: ignore[import-not-found]
 import dash_cytoscape as cyto  # type: ignore[import-not-found]
 import numpy as np # type: ignore[import-not-found]
 
-from dash import Dash, html, dcc, Input, Output, callback, dash_table, State # type: ignore[import-not-found]
+from dash import Dash, html, dcc, Input, Output, callback, dash_table, State, ctx, no_update# type: ignore[import-not-found]
 from nba_api.stats.static import teams
 
 con = sqlite3.connect('data/nba.db', timeout=10)
@@ -200,89 +200,65 @@ def update_pagerank_table(selected_team, selected_season):
     
     return selected_pageranks.loc[:,['season','node_name','pagerank']].sort_values('pagerank',ascending=False).to_dict('records')
 
-#highlighting node for highlighted cell in datatable
-@app.callback(
-    Output('graph_networks', 'stylesheet'),
-    Input('pagerank_table', 'active_cell'),
-    State('pagerank_table', 'data'),
-    State('graph_networks', 'elements')
-)
-def highlightnode(active_cell, table_data, node_elements):
-    base_stylesheet = [
-                    {
-                        'selector': 'node',
-                        'style': {
-                            'label': 'data(label)',
-                            'width': 'data(pagerank)',
-                            'height': 'data(pagerank)'
-                        }
-                    },
-                    {
-                        'selector': '.shot',
-                        'style': {
-                            'background-color': '#FF2C2C',
-                            'opacity': 0.95
-                        }
-                    },
-                    {
-                        'selector': '.player',
-                        'style': {
-                            'background-color': '#B6E3FF',
-                            'opacity': 0.95
-                        }
-                    },
-                    {
-                        'selector': 'edge',
-                        'style': {
-                            'source-arrow-shape': 'triangle'
-                        }
-                    }
-                ]
+BASE_STYLESHEET = [
+    {'selector': 'node',
+     'style': {'label': 'data(label)',
+               'width': 'data(pagerank)',
+               'height': 'data(pagerank)'}},
+    {'selector': '.shot',
+     'style': {'background-color': '#FF2C2C', 'opacity': 0.95}},
+    {'selector': '.player',
+     'style': {'background-color': '#B6E3FF', 'opacity': 0.95}},
+    {'selector': 'edge',
+     'style': {'source-arrow-shape': 'triangle'}},
+]
 
-    if active_cell is None:
-        return base_stylesheet
 
-    active_node_name = table_data[active_cell['row']]['node_name']
-    print(active_node_name)
-    
-    # Add highlight style
-    node_highlight = {
-        'selector': f'node[id = "{active_node_name}"]',
+def with_highlight(node_name):
+    return BASE_STYLESHEET + [{
+        'selector': f'node[id = "{node_name}"]',
         'style': {
             'border-width': '12px',
             'border-color': '#172B3C',
             'background-color': '#172B3C',
-            'opacity': 1
+            'opacity': 1,
         }
-    }
-    
-    base_stylesheet.append(node_highlight)
-    
-    return base_stylesheet
+    }]
 
-#highlighting row element after clicking node on cytoscape
+
 @app.callback(
+    Output('graph_networks', 'stylesheet'),
     Output('pagerank_table', 'active_cell'),
+    Output('pagerank_table', 'selected_cells'),
+    Output('graph_networks', 'tapNodeData'),
     Input('graph_networks', 'tapNodeData'),
-    State('pagerank_table', 'data')
+    Input('pagerank_table', 'active_cell'),
+    State('pagerank_table', 'data'),
+    prevent_initial_call=True,
 )
-def switch_table_element(node_data, table_data):
-    if node_data is None:
-        return None
-    
-    print("NODE CLICK:", node_data)
-    node_name = node_data['id']
-    
-    for i, row in enumerate(table_data):
-        if row['node_name'] == node_name:
-            
-            return {
-                'row': i,
-                'column': 1,
-                'column_id': 'node_name'
-            }
+def sync_selection(tap_node, active_cell, table_data):
+    table_data = table_data or []
 
-    return None
+    if ctx.triggered_id == 'graph_networks':
+        if tap_node is None:
+            # this is the reset pass firing back into us — ignore it
+            return no_update, no_update, no_update, no_update
+
+        name = tap_node['id']
+        row = next((i for i, r in enumerate(table_data)
+                    if r['node_name'] == name), None)
+        if row is None:
+            return BASE_STYLESHEET, None, [], None
+
+        cell = {'row': row, 'column': 1, 'column_id': 'node_name'}
+        return with_highlight(name), cell, [cell], None
+
+    # table was clicked
+    if active_cell is None or active_cell['row'] >= len(table_data):
+        return BASE_STYLESHEET, no_update, no_update, None
+
+    name = table_data[active_cell['row']]['node_name']
+    return with_highlight(name), no_update, no_update, None
 
 if __name__ == "__main__":
     app.run(debug=True)
