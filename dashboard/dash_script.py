@@ -277,6 +277,7 @@ def switch_table_element(node_data, table_data):
     
     for i, row in enumerate(table_data):
         if row['node_name'] == node_name:
+            
             return {
                 'row': i,
                 'column': 1,
