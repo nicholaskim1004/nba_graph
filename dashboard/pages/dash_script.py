@@ -3,6 +3,7 @@ import pandas as pd # type: ignore[import-not-found]
 import dash_cytoscape as cyto  # type: ignore[import-not-found]
 import numpy as np # type: ignore[import-not-found]
 
+import dash 
 from dash import Dash, html, dcc, Input, Output, callback, dash_table, State, ctx, no_update# type: ignore[import-not-found]
 from nba_api.stats.static import teams
 
@@ -22,7 +23,7 @@ seasons = pageranks_yr['season'].unique()
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
-app = Dash()
+dash.register_page(__name__, path='/', name='Regular Season')
 
 app.layout = html.Div([
     html.H1("NBA GRAPH NETWORKS",
