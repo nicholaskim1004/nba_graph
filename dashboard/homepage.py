@@ -1,7 +1,7 @@
 # app.py
 import dash
 from dash import Dash, html, dcc
-app = Dash(__name__, use_pages=True)
+app = Dash(__name__, use_pages=True,suppress_callback_exceptions=True)
 
 app.layout = html.Div([
     html.H1("NBA GRAPH NETWORKS",
@@ -19,6 +19,7 @@ app.layout = html.Div([
             "marginTop": "0px"
         }
     ),
+    html.Br(),
     html.Div([
         dcc.Link(page['name'], href=page['relative_path'])
         for page in dash.page_registry.values()
