@@ -154,7 +154,7 @@ layout = html.Div([
 ])
 
 
-@app.callback(
+@callback(
     Output("graph_networks", "elements"),
     Input("team-dropdown", "value"),
     Input("season-slider", "value")
@@ -199,7 +199,7 @@ def update_network(selected_teams, selected_season):
 
     return nodes + edges
 
-@app.callback(
+@callback(
     Output('pagerank_table', 'data'),
     Input("team-dropdown", "value"),
     Input("season-slider", "value")
@@ -240,7 +240,7 @@ def with_highlight(node_name):
     }]
 
 #highlights the correct node or element based on clicked node or element
-@app.callback(
+@callback(
     Output('graph_networks', 'stylesheet'),
     Output('pagerank_table', 'active_cell'),
     Output('pagerank_table', 'selected_cells'),
@@ -275,7 +275,7 @@ def sync_selection(tap_node, active_cell, table_data):
     return with_highlight(name), no_update, no_update, None
 
 #show datatable with edge weights from node ordered from highest to lowest
-@app.callback(
+@callback(
     Output('passes_weight_table', 'data'),
     Output('passes_weight_container', 'style'),
     Input("team-dropdown", "value"),
@@ -313,5 +313,5 @@ def update_pass_table(selected_team, selected_season, active_cell, table_data):
     return weights[['season', 'node_name', 'edge_to', 'weight']].to_dict('records'), {'display': 'block'}
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    run(debug=True)
     
