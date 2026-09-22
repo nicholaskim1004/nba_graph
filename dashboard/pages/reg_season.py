@@ -28,15 +28,15 @@ dash.register_page(__name__, path='/', name='Regular Season')
 layout = html.Div([
     html.Br(),
     
-    html.Label('Team'),
+    html.Label('Team',style={"fontFamily": 'sans-serif'}),
     dcc.Dropdown(id='team-dropdown',
                  options=sorted(team_list,reverse=False),
                  value=team_list[0],
-                 style={'width': '50%'}),
+                 style={"fontFamily": 'sans-serif','width': '50%'}),
     
     html.Br(),
     
-    html.Label('Season'),
+    html.Label('Season',style={"fontFamily": 'sans-serif'}),
     dcc.Slider(id='season-slider',
                min=0,
                max=len(seasons)-1,
@@ -283,6 +283,8 @@ def update_pass_table(selected_team, selected_season, active_cell, table_data):
             (edges_yr['target'] == name)
         ].sort_values('weight', ascending=False)
         weights = weights.rename(columns={'source': 'node_name', 'target': 'edge_to'})
+        
+        weights['weight'] = weights['weight'].round(4)
     else:
         weights = edges_yr[
             (edges_yr['season'] == season) &
@@ -290,7 +292,8 @@ def update_pass_table(selected_team, selected_season, active_cell, table_data):
             (edges_yr['source'] == name)
         ].sort_values('weight', ascending=False)
         weights = weights.rename(columns={'source': 'node_name', 'target': 'edge_to'})
-
+        
+        weights['weight'] = weights['weight'].round(4)
     if weights.empty:
         return [], {'display': 'none'}
 
