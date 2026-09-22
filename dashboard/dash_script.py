@@ -137,15 +137,18 @@ app.layout = html.Div([
         )
     ]
     ),
-    html.H2('Pass Weights'),
     html.Div(
+    id='passes_weight_container',
+    children=[
+        html.H2('Edge Weights',style={"fontFamily": 'sans-serif',"fontWeight": 'bold'}),
         dash_table.DataTable(
             id='passes_weight_table',
             data=[],
             columns=[{'name': i, 'id': i}
                     for i in ['season','node_name','edge_to','weight']]
-        ),
-        style = {'display': 'none'}
+        )
+    ],
+    style={'display': 'none'}  # hidden until something is selected
     )
 ])
 
@@ -288,16 +291,25 @@ def update_pass_table(selected_team, selected_season, active_cell, table_data):
     season = seasons[selected_season]
     name = table_data[active_cell['row']]['node_name']
 
-    pass_weights = edges_yr[
-        (edges_yr['season'] == season) &
-        (edges_yr['team_id'].isin(sel_teams_ids)) &
-        (edges_yr['source'] == name)
-    ].sort_values('weight', ascending=False)
+    if name in diff_shots:
+        weights = edges_yr[
+            (edges_yr['season'] == season) &
+            (edges_yr['team_id'].isin(sel_teams_ids)) &
+            (edges_yr['target'] == name)
+        ].sort_values('weight', ascending=False)
+        weights = weights.rename(columns={'source': 'node_name', 'target': 'edge_to'})
+    else:
+        weights = edges_yr[
+            (edges_yr['season'] == season) &
+            (edges_yr['team_id'].isin(sel_teams_ids)) &
+            (edges_yr['source'] == name)
+        ].sort_values('weight', ascending=False)
+        weights = weights.rename(columns={'source': 'node_name', 'target': 'edge_to'})
 
-    if pass_weights.empty:
+    if weights.empty:
         return [], {'display': 'none'}
 
-    return pass_weights.to_dict('records'), {'display': 'block'}
+    return weights[['season', 'node_name', 'edge_to', 'weight']].to_dict('records'), {'display': 'block'}
 
 if __name__ == "__main__":
     app.run(debug=True)
