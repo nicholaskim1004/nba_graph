@@ -296,6 +296,4 @@ def update_pass_table(selected_team, selected_season, active_cell, table_data):
 
     return weights[['season', 'node_name', 'edge_to', 'weight']].to_dict('records'), {'display': 'block'}
 
-if __name__ == "__main__":
-    run(debug=True)
     
