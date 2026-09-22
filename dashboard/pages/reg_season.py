@@ -196,6 +196,8 @@ def update_pagerank_table(selected_team, selected_season):
         (pageranks_yr["team_id"].isin(sel_teams_ids))&(pageranks_yr['season']==season)
     ]
     
+    selected_pageranks['pagerank'] = selected_pageranks['pagerank'].round(4)
+    
     return selected_pageranks.loc[:,['season','node_name','pagerank']].sort_values('pagerank',ascending=False).to_dict('records')
 
 BASE_STYLESHEET = [
