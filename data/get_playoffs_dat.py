@@ -96,6 +96,8 @@ attempt_cols = [
     'backcourt_att'
 ]
 
+all_shots = {}
+
 #shots dataset
 for yr in years:
     print(f'🏀 getting shots for {yr} ⛹️‍♂️')
@@ -178,6 +180,8 @@ for yr in years:
     #getting rid of nans in shot
     shots_yr.fillna(0,inplace=True)
     
+    all_shots[yr] = shots_yr.copy()
+    
     #saving to database        
     print(f'saving shots for {yr} to database 🖨️')
     shots_yr.to_sql('shots_playoffs_yr', con, if_exists='append', index=False)
@@ -188,7 +192,7 @@ print("finished pulling shots data! 🔥")
 print("starting passes dataframe pull for playoffs 🏆")
 team_list = teams.get_teams()
 #filter to teams that appear in playoffs
-playoff_ids = shots_yr['team_id'].unique()
+playoff_ids = pd.concat(all_shots.values())['team_id'].unique()
 
 team_list = [team for team in team_list if team['id'] in playoff_ids]
 
@@ -199,8 +203,9 @@ for yr in years:
         team_name = team['full_name']
         print(f"Getting passes for {team_name} ({team_id}) in {yr} season...")
         
-        query = f"SELECT * FROM shots_playoffs_yr WHERE season = '{yr}' AND team_id = {team_id}"
-        shots_yr = pd.read_sql_query(query, con)
+        shots_yr_full = all_shots[yr]
+        
+        shots_yr = shots_yr_full[shots_yr_full['team_id'] == team_id]
         
         if shots_yr.empty:
             print(f"No shot data found for {team_name} in {yr} season. Skipping...")
