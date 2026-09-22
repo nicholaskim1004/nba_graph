@@ -1,6 +1,6 @@
 # app.py
-import dash
-from dash import Dash, html, dcc, Output, Input
+import dash # type: ignore[import-not-found]
+from dash import Dash, html, dcc, Output, Input # type: ignore[import-not-found]
 
 app = Dash(__name__, use_pages=True,suppress_callback_exceptions=True)
 

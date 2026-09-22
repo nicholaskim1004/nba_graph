@@ -3,7 +3,7 @@ import pandas as pd # type: ignore[import-not-found]
 import dash_cytoscape as cyto  # type: ignore[import-not-found]
 import numpy as np # type: ignore[import-not-found]
 
-import dash 
+import dash # type: ignore[import-not-found]
 from dash import Dash, html, dcc, Input, Output, callback, dash_table, State, ctx, no_update# type: ignore[import-not-found]
 from nba_api.stats.static import teams
 
