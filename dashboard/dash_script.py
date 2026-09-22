@@ -144,7 +144,8 @@ app.layout = html.Div([
             data=[],
             columns=[{'name': i, 'id': i}
                     for i in ['season','node_name','edge_to','weight']]
-        )
+        ),
+        style = {'display': 'none'}
     )
 ])
 
@@ -272,6 +273,7 @@ def sync_selection(tap_node, active_cell, table_data):
 #show datatable with edge weights from node ordered from highest to lowest
 @app.callback(
     Output('passes_weight_table', 'data'),
+    Output('passes_weight_container', 'style'),
     Input("team-dropdown", "value"),
     Input("season-slider", "value"),
     Input('pagerank_table', 'active_cell'),
@@ -280,14 +282,22 @@ def sync_selection(tap_node, active_cell, table_data):
 def update_pass_table(selected_team, selected_season, active_cell, table_data):
     sel_teams_ids = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
 
-    if active_cell is None:
-        return None
-    
+    if active_cell is None or not table_data:
+        return [], {'display': 'none'}
+
     season = seasons[selected_season]
     name = table_data[active_cell['row']]['node_name']
-    print(active_cell)
-    pass_weights = edges_yr[(edges_yr['season']==season)&(edges_yr['team_id'].isin(sel_teams_ids))&(edges_yr['source']==name)]
-    return pass_weights.sort_values('weight', ascending=False)
+
+    pass_weights = edges_yr[
+        (edges_yr['season'] == season) &
+        (edges_yr['team_id'].isin(sel_teams_ids)) &
+        (edges_yr['source'] == name)
+    ].sort_values('weight', ascending=False)
+
+    if pass_weights.empty:
+        return [], {'display': 'none'}
+
+    return pass_weights.to_dict('records'), {'display': 'block'}
 
 if __name__ == "__main__":
     app.run(debug=True)
