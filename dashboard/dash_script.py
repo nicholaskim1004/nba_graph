@@ -137,11 +137,13 @@ app.layout = html.Div([
         )
     ]
     ),
+    html.H2('Pass Weights'),
     html.Div(
         dash_table.DataTable(
             id='passes_weight_table',
             data=[],
-            columns={['season','node_name','edge_to','weight']}
+            columns=[{'name': i, 'id': i}
+                    for i in ['season','node_name','edge_to','weight']]
         )
     )
 ])
@@ -272,11 +274,20 @@ def sync_selection(tap_node, active_cell, table_data):
     Output('passes_weight_table', 'data'),
     Input("team-dropdown", "value"),
     Input("season-slider", "value"),
-    Input('pagerank_table', 'selected_cells')
+    Input('pagerank_table', 'active_cell'),
+    State('pagerank_table', 'data')
 )
-def update_pass_table(selected_team, selected_season, selected_node):
+def update_pass_table(selected_team, selected_season, active_cell, table_data):
+    sel_teams_ids = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
+
+    if active_cell is None:
+        return None
     
-    return 
+    season = seasons[selected_season]
+    name = table_data[active_cell['row']]['node_name']
+    print(active_cell)
+    pass_weights = edges_yr[(edges_yr['season']==season)&(edges_yr['team_id'].isin(sel_teams_ids))&(edges_yr['source']==name)]
+    return pass_weights.sort_values('weight', ascending=False)
 
 if __name__ == "__main__":
     app.run(debug=True)
