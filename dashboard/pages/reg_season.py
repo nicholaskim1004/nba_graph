@@ -41,7 +41,8 @@ layout = html.Div([
                min=0,
                max=len(seasons)-1,
                marks={i: seasons[i] for i in range(len(seasons)) },
-               value=len(seasons)-1),
+               value=len(seasons)-1,
+               allow_direct_input=False),
     
     html.Br(),
     
