@@ -199,7 +199,7 @@ for yr in years:
         team_name = team['full_name']
         print(f"Getting passes for {team_name} ({team_id}) in {yr} season...")
         
-        query = f"SELECT * FROM shots_yr WHERE season = '{yr}' AND team_id = {team_id}"
+        query = f"SELECT * FROM shots_playoffs_yr WHERE season = '{yr}' AND team_id = {team_id}"
         shots_yr = pd.read_sql_query(query, con)
         
         if shots_yr.empty:
