@@ -1,6 +1,20 @@
 # app.py
 import dash # type: ignore[import-not-found]
+import sqlite3
+import pandas as pd # type: ignore[import-not-found]
 from dash import Dash, html, dcc, Output, Input # type: ignore[import-not-found]
+from nba_api.stats.static import teams
+
+con = sqlite3.connect('data/nba.db', timeout=10)
+cursor = con.cursor()
+
+query_page = "SELECT * FROM pageranks_yr"
+pageranks_yr = pd.read_sql_query(query_page, con)
+
+team_df = pd.DataFrame(teams.get_teams())
+team_list = team_df['full_name'].to_numpy()
+
+seasons = pageranks_yr['season'].unique()
 
 app = Dash(__name__, use_pages=True,suppress_callback_exceptions=True)
 
@@ -20,6 +34,24 @@ app.layout = html.Div([
             "marginTop": "0px"
         }
     ),
+    html.Br(),    
+    
+    html.Label('Team',style={"fontFamily": 'sans-serif'}),
+    dcc.Dropdown(id='team-dropdown',
+                 options=sorted(team_list,reverse=False),
+                 value=team_list[0],
+                 style={"fontFamily": 'sans-serif','width': '50%'}),
+    
+    html.Br(),
+    
+    html.Label('Season',style={"fontFamily": 'sans-serif'}),
+    dcc.Slider(id='season-slider',
+               min=0,
+               max=len(seasons)-1,
+               marks={i: seasons[i] for i in range(len(seasons)) },
+               value=len(seasons)-1,
+               allow_direct_input=False),
+    
     html.Br(),
     html.Div(
             id='nav-tabs',

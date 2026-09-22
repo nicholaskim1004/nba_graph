@@ -26,26 +26,6 @@ diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Cor
 dash.register_page(__name__, path='/', name='Regular Season')
 
 layout = html.Div([
-    html.Br(),
-    
-    html.Label('Team',style={"fontFamily": 'sans-serif'}),
-    dcc.Dropdown(id='team-dropdown',
-                 options=sorted(team_list,reverse=False),
-                 value=team_list[0],
-                 style={"fontFamily": 'sans-serif','width': '50%'}),
-    
-    html.Br(),
-    
-    html.Label('Season',style={"fontFamily": 'sans-serif'}),
-    dcc.Slider(id='season-slider',
-               min=0,
-               max=len(seasons)-1,
-               marks={i: seasons[i] for i in range(len(seasons)) },
-               value=len(seasons)-1,
-               allow_direct_input=False),
-    
-    html.Br(),
-    
     html.Div(
     style={
         'display': 'flex',
