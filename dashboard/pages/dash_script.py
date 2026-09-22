@@ -25,7 +25,7 @@ diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Cor
 
 dash.register_page(__name__, path='/', name='Regular Season')
 
-app.layout = html.Div([
+layout = html.Div([
     html.H1("NBA GRAPH NETWORKS",
             style={
                 "fontFamily": 'sans-serif',
