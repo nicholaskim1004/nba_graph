@@ -10,7 +10,7 @@ from nba_api.stats.endpoints import leaguedashplayershotlocations, PlayerCareerS
 
 #function to convert playerdashptpass data to a dataframe of passes between teammates
 #stores the count & proportion of passes from each player to each teammate in the dataframe
-def get_team_pass_df(team_df, team_id, season, season_type='Regular Season'):
+def get_team_pass_df(team_df, team_id, season, season_type='Playoffs'):
     pass_row_inf = []
     
     pulled = {}
