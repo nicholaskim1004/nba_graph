@@ -216,7 +216,7 @@ for yr in years:
         team_passes = passes_yr[(passes_yr['team_id']==teamid)&(passes_yr['season']==yr)]
         
         #making sure the players included in team_passes matches that in shots
-        team_passes[(team_passes['pass_to_id'].isin(team_shots['player_id']))&(team_passes['player_id'].isin(team_shots['player_id']))]             
+        team_passes = team_passes[(team_passes['pass_to_id'].isin(team_shots['player_id']))&(team_passes['player_id'].isin(team_shots['player_id']))]             
                         
         #initalizing network
         G = nx.DiGraph()
