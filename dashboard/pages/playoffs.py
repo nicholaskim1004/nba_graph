@@ -23,7 +23,7 @@ seasons = pageranks_yr['season'].unique()
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
-dash.register_page(__name__, path='/', name='Playoffs')
+dash.register_page(__name__, path='/playoffs', name='Playoffs')
 
 layout = html.Div([
     html.Div(
