@@ -64,8 +64,6 @@ print("starting passes dataframe pull for playoffs 🏆")
 
 team_list = teams.get_teams()
 
-team_list = [team for team in team_list if team['id'] in playoff_ids]
-
 for yr in years:
     query = f"SELECT * FROM shots_playoffs_yr WHERE season = '{yr}'"
     shots_yr_full = pd.read_sql_query(query, con)
@@ -73,14 +71,15 @@ for yr in years:
     #filtering to only playoff teams for that year
     playoff_ids = shots_yr['team_id'].unique()
     
-    team_list = [team for team in team_list if team['id'] in playoff_ids]
+    team_list_playoffs_yr = [team for team in team_list if team['id'] in playoff_ids]
+    
     print(f'🏀 getting passes for {yr} ⛹️‍♂️')
-    for team in team_list:
+    for team in team_list_playoffs_yr:
         team_id = team['id']
         team_name = team['full_name']
         print(f"Getting passes for {team_name} ({team_id}) in {yr} season...")
         
-        shots_yr = shots_yr_full[shots_yr_full['team_id']==team]
+        shots_yr = shots_yr_full[shots_yr_full['team_id']==team_id]
             
         if shots_yr.empty:
             print(f"No shot data found for {team_name} in {yr} season. Skipping...")
