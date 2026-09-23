@@ -193,7 +193,7 @@ for yr in years:
         team_shots = shots_cur[shots_cur['team_id']==teamid]
         
         #filtering out players who don't play that much
-        team_shots = team_shots[team_shots['min']>200]
+        team_shots = team_shots[team_shots['min']>10]
         
         total_shots = team_shots.iloc[:,5:].sum(axis=1)
         
