@@ -69,7 +69,7 @@ for yr in years:
     shots_yr_full = pd.read_sql_query(query, con)
     
     #filtering to only playoff teams for that year
-    playoff_ids = shots_yr['team_id'].unique()
+    playoff_ids = shots_yr_full['team_id'].unique()
     
     team_list_playoffs_yr = [team for team in team_list if team['id'] in playoff_ids]
     
