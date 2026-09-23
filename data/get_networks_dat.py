@@ -168,6 +168,7 @@ for yr in years:
 print('finished 🚀')   
 
 ###Playoffs Networks
+print('starting to build Playoff networks')
 
 query_sh = "SELECT * FROM shots_playoffs_yr"
 shots_yr = pd.read_sql_query(query_sh, con)
