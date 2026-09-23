@@ -11,6 +11,9 @@ cursor = con.cursor()
 query_page = "SELECT * FROM pageranks_yr"
 pageranks_yr = pd.read_sql_query(query_page, con)
 
+query_play = "SELECT * FROM pageranks_playoffs_yr"
+pageranks_play = pd.read_sql_query(query_play, con)
+
 team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
 
@@ -88,6 +91,29 @@ def update_active_tab(pathname):
         )
         for page in dash.page_registry.values()
     ]
+
+#dynamically change list of team to teams in playoffs for selected season 
+@app.callback(
+    Output("team-dropdown", "options"),
+    Output("team-dropdown", "value"),
+    Input("season-slider", "value"),
+    Input("_pages_location", "pathname")
+)
+def update_team_list(selected_season, pathname):
+    season = seasons[selected_season]
+    
+    if pathname == '/playoffs':
+        df = pageranks_play
+    else:
+        df = pageranks_yr
+    season_team_ids = df[df['season'] == season]['team_id'].unique()
+    season_teams = team_df[team_df['id'].isin(season_team_ids)]['full_name'].to_numpy()
+    season_teams = sorted(season_teams)
+
+    # reset to first valid team if current selection isn't in the new list
+    default_value = season_teams[0] if len(season_teams) else None
+    
+    return season_teams, default_value
 
 if __name__ == "__main__":
     app.run(debug=True)
