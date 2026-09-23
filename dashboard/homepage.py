@@ -56,6 +56,7 @@ app.layout = html.Div([
     html.Div(
             id='nav-tabs',
             className='tab-container',
+            style = {'display': 'flex', 'flexDirection': 'row', 'gap': '16px'},
             children=[
                 dcc.Link(
                     page['name'],
