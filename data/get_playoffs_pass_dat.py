@@ -10,6 +10,7 @@ def get_team_pass_df(team_df, team_id, season, season_type='Playoffs'):
     pass_row_inf = []
     
     pulled = {}
+    
     for _, trow in team_df.iterrows():
         while True:
             try:
@@ -28,11 +29,10 @@ def get_team_pass_df(team_df, team_id, season, season_type='Playoffs'):
                 print(f"Error occurred: {trow['player_name']}: {e}")
                 print("Retrying after 30 seconds...")
                 time.sleep(30)  # Sleep for 30 seconds to avoid rate limiting
-                get_team_pass_df(team_df, team_id, season)  # Retry the function
                 break
         time.sleep(1)
         
-        return pd.DataFrame(pass_row_inf)
+    return pd.DataFrame(pass_row_inf)
     
 #setting up database
 #connect to database
@@ -79,7 +79,7 @@ for yr in years:
         team_name = team['full_name']
         print(f"Getting passes for {team_name} ({team_id}) in {yr} season...")
         
-        shots_yr = shots_yr_full[shots_yr_full['team_id']==team_id]
+        shots_yr = shots_yr_full[(shots_yr_full['team_id']==team_id)&(shots_yr_full['season']==yr)]
             
         if shots_yr.empty:
             print(f"No shot data found for {team_name} in {yr} season. Skipping...")
