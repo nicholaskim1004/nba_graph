@@ -80,6 +80,8 @@ for yr in years:
         print(f"Getting passes for {team_name} ({team_id}) in {yr} season...")
         
         shots_yr = shots_yr_full[shots_yr_full['team_id']==team_id]
+        
+        print(shots_yr.head())
             
         if shots_yr.empty:
             print(f"No shot data found for {team_name} in {yr} season. Skipping...")
@@ -90,8 +92,10 @@ for yr in years:
         pass_df['team_id'] = int(team_id)
         pass_df['season'] = str(yr)
         
+        print(pass_df.head())
+        
         if not pass_df.empty:
-            pass_df.to_sql('passes__playoffs_yr', con, if_exists='append', index=False)
+            pass_df.to_sql('passes_playoffs_yr', con, if_exists='append', index=False)
             print(f"Pass data for {team_name} in {yr} season saved to database 💾")
         else:
             print(f"No pass data found for {team_name} in {yr} season")
