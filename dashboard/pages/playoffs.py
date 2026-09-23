@@ -5,6 +5,7 @@ import numpy as np # type: ignore[import-not-found]
 
 import dash # type: ignore[import-not-found]
 from dash import html, Input, Output, callback, dash_table, State, ctx, no_update# type: ignore[import-not-found]
+import plotly.express as px
 from nba_api.stats.static import teams
 
 con = sqlite3.connect('data/nba.db', timeout=10)
@@ -15,6 +16,10 @@ pageranks_yr = pd.read_sql_query(query_page, con)
 
 query_edge = "SELECT * FROM network_edges_playoffs"
 edges_yr = pd.read_sql_query(query_edge, con)
+
+#importing regular season data to build heatmap
+query_page_reg = "SELECT * FROM pageranks_yr"
+pageranks_yr_reg = pd.read_sql_query(query_page_reg, con)
 
 team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
@@ -115,6 +120,15 @@ layout = html.Div([
         )
     ],
     style={'display': 'none'}  # hidden until something is selected
+    ),
+    
+    html.Div(
+        id='reg_v_play',
+        children=[
+            html.H2('Regular Season vs Playoffs',
+                    style={"fontFamily": 'sans-serif',"fontWeight": 'bold'}
+                    )
+        ]
     )
 ])
 
