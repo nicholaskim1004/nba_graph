@@ -45,12 +45,18 @@ app.layout = html.Div([
     html.Br(),
     
     html.Label('Season',style={"fontFamily": 'sans-serif'}),
-    dcc.Slider(id='season-slider',
+    html.Div(
+        dcc.Slider(id='season-slider',
                min=0,
                max=len(seasons)-1,
                marks={i: seasons[i] for i in range(len(seasons)) },
                value=len(seasons)-1,
                allow_direct_input=False),
+        style={'width': '96%',
+               'padding': '0 30px',
+               'margin': '0 auto'
+               }
+            ),
     
     html.Br(),
     html.Div(
