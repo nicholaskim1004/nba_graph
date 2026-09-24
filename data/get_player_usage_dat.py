@@ -110,7 +110,7 @@ for yr in years:
 print('starting pull for playoffs 🏆')
 
 for yr in years:
-    teams_in_play = pageranks_yr_play[pageranks_yr_players['season']==yr].loc[:,'team_id'].to_numpy()
+    teams_in_play = pageranks_yr_play[pageranks_yr_play['season']==yr].loc[:,'team_id'].to_numpy()
     
     for teamid in teams_in_play:
         pageranks_yr_play_players = pageranks_yr_play[
