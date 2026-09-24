@@ -28,6 +28,26 @@ seasons = pageranks_yr['season'].unique()
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
+def gini_coef(x):
+    x = np.asarray(x, dtype = np.float64)
+    
+    if np.any(x < 0):
+        raise ValueError("Gini coeff requires non negative values")
+    x = np.sort(x)
+    n = len(x)
+    index = np.arange(1, n + 1)
+
+    return (np.sum((2 * index - n - 1)* x)) / (n * np.sum(x))
+
+def normalized_entropy(p):
+    p = np.array(p)
+    p = p[p > 0]  
+    N = len(p)
+    if N <= 1:
+        return 0.0
+    H = -np.sum(p * np.log(p))
+    return H / np.log(N)
+
 dash.register_page(__name__, path='/playoffs', name='Playoffs', order = 1)
 
 layout = html.Div([
@@ -120,6 +140,19 @@ layout = html.Div([
         )
     ],
     style={'display': 'none'}  # hidden until something is selected
+    ),
+
+    html.Div(
+        id='player_usage_container_play',
+        children=[
+            html.H2('Player Usage',style={"fontFamily": 'sans-serif',"fontWeight": 'bold'}),
+            dash_table.DataTable(
+                id='player_usage_table_play',
+                data=[],
+                columns=[{'name': i, 'id': i}
+                        for i in ['season','gini','entropy','eff_num_players']]
+            )
+        ]
     ),
     
     html.Div(
@@ -296,4 +329,34 @@ def update_pass_table(selected_team, selected_season, active_cell, table_data):
 
     return weights[['season', 'node_name', 'edge_to', 'weight']].to_dict('records'), {'display': 'block'}
 
+
+@callback(
+    Output('player_usage_table_play','data'),
+    Input('team-dropdown','value'),
+    Input('season-slider','value')
+) 
+def get_player_usage_dat(selected_team, selected_season):
+    season = seasons[selected_season]
+    teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
     
+    team_player_pageranks = pageranks_yr[
+        (pageranks_yr['season']==season)&
+        (pageranks_yr['team_id'].isin(teamid))&
+        (~pageranks_yr['node_name'].isin(diff_shots))
+        ]
+    
+    p = team_player_pageranks['pagerank'].to_numpy()
+    
+    #normalizing pageranks
+    p = p/p.sum()
+    
+    gini = gini_coef(p)
+    entropy = normalized_entropy(p)
+    eff_num_players = (1/np.sum(p**2))/len(p)
+    
+    player_df = pd.DataFrame({'season': season, 'gini': gini, 'entropy': entropy, 'eff_num_players': eff_num_players},index=[0])
+    return player_df.to_dict('records')
+
+#creating the regular season vs playoff difference dataframe
+
+
