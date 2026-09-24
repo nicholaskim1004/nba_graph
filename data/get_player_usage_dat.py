@@ -101,7 +101,7 @@ for yr in years:
                       'gini': gini,
                       'entropy': entropy,
                       'eff_num_players': eff_num_players
-                      }, index=[0]).to_sql('player_usage_yr', if_exists='append', index=False)
+                      }, index=[0]).to_sql('player_usage_yr', con, if_exists='append', index=False)
         
         print(f'saving data {team['full_name']} in {yr} to database 🕺')
     print(f'finished saving info for season {yr}...')
@@ -133,7 +133,7 @@ for yr in years:
                       'gini': gini,
                       'entropy': entropy,
                       'eff_num_players': eff_num_players
-                      }, index=[0]).to_sql('player_usage_yr_playoff', if_exists='append', index=False)
+                      }, index=[0]).to_sql('player_usage_yr_playoff', con, if_exists='append', index=False)
         print(f'saving data {teamid} in {yr} to database 🕺')
     print(f'finished for {yr} season')
 
