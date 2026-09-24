@@ -4,8 +4,9 @@ import dash_cytoscape as cyto  # type: ignore[import-not-found]
 import numpy as np # type: ignore[import-not-found]
 
 import dash # type: ignore[import-not-found]
-from dash import Dash, html, dcc, Input, Output, callback, dash_table, State, ctx, no_update# type: ignore[import-not-found]
+from dash import html, Input, Output, callback, dash_table, State, ctx, no_update# type: ignore[import-not-found]
 from nba_api.stats.static import teams
+from scipy.stats import entropy
 
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
@@ -22,6 +23,19 @@ team_list = team_df['full_name'].to_numpy()
 seasons = pageranks_yr['season'].unique()
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
+
+#bringing in player usage metrics (gini, effective number of players and entropy)
+
+def gini_coef(x):
+    x = np.asarray(x, dtype = np.float64)
+    
+    if np.any(x < 0):
+        raise ValueError("Gini coeff requires non negative values")
+    x = np.sort(x)
+    n = len(x)
+    index = np.arange(1, n + 1)
+
+    return (np.sum((2 * index - n - 1)* x)) / (n * np.sum(x))
 
 dash.register_page(__name__, path='/reg-season', name='Regular Season', order = 0)
 
@@ -115,6 +129,18 @@ layout = html.Div([
         )
     ],
     style={'display': 'none'}  # hidden until something is selected
+    ),
+    html.Div(
+        id='player_usage_container',
+        children=[
+            html.H2('Player Usage',style={"fontFamily": 'sans-serif',"fontWeight": 'bold'}),
+            dash_table.DataTable(
+                id='player_usage_table',
+                data=[],
+                columns=[{'name': i, 'id': i}
+                        for i in ['season','gini','entropy','eff_num_players']]
+            )
+        ]
     )
 ])
 
