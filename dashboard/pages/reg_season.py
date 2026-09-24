@@ -6,7 +6,6 @@ import numpy as np # type: ignore[import-not-found]
 import dash # type: ignore[import-not-found]
 from dash import html, Input, Output, callback, dash_table, State, ctx, no_update# type: ignore[import-not-found]
 from nba_api.stats.static import teams
-from scipy.stats import entropy
 
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
@@ -36,6 +35,15 @@ def gini_coef(x):
     index = np.arange(1, n + 1)
 
     return (np.sum((2 * index - n - 1)* x)) / (n * np.sum(x))
+
+def normalized_entropy(p):
+    p = np.array(p)
+    p = p[p > 0]  
+    N = len(p)
+    if N <= 1:
+        return 0.0
+    H = -np.sum(p * np.log(p))
+    return H / np.log(N)
 
 dash.register_page(__name__, path='/reg-season', name='Regular Season', order = 0)
 
@@ -308,4 +316,25 @@ def update_pass_table(selected_team, selected_season, active_cell, table_data):
 
     return weights[['season', 'node_name', 'edge_to', 'weight']].to_dict('records'), {'display': 'block'}
 
+#callback to calculate all player usage stats for table
+@callback(
+    Output('player_usage_table','data'),
+    Input('team-dropdown','value'),
+    Input('season-slider','value')
+) 
+def get_player_usage_dat(selected_team, selected_season):
+    season = seasons[selected_season]
+    teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
+    team_pageranks = pageranks_yr[(pageranks_yr['season']==season)&(pageranks_yr['team_id']==teamid)]
     
+    p = team_pageranks['pagerank'].to_numpy()
+    
+    #normalizing pageranks
+    p = p/p.sum()
+    
+    gini = gini_coef(p)
+    entropy = normalized_entropy(p)
+    eff_num_players = (1/np.sum(p**2))/len(p)
+    
+    player_df = pd.DataFrame({'season': season, 'gini': gini, 'entropy': entropy, 'eff_num_players': eff_num_players})
+    return player_df.to_dict('records')
