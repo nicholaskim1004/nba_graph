@@ -16,34 +16,15 @@ pageranks_yr = pd.read_sql_query(query_page, con)
 query_edge = "SELECT * FROM network_edges"
 edges_yr = pd.read_sql_query(query_edge, con)
 
+query_player = "SELECT * FROM player_usage_yr"
+player_usage = pd.read_sql_query(query_player, con)
+
 team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
 
 seasons = pageranks_yr['season'].unique()
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
-
-#bringing in player usage metrics (gini, effective number of players and entropy)
-
-def gini_coef(x):
-    x = np.asarray(x, dtype = np.float64)
-    
-    if np.any(x < 0):
-        raise ValueError("Gini coeff requires non negative values")
-    x = np.sort(x)
-    n = len(x)
-    index = np.arange(1, n + 1)
-
-    return (np.sum((2 * index - n - 1)* x)) / (n * np.sum(x))
-
-def normalized_entropy(p):
-    p = np.array(p)
-    p = p[p > 0]  
-    N = len(p)
-    if N <= 1:
-        return 0.0
-    H = -np.sum(p * np.log(p))
-    return H / np.log(N)
 
 dash.register_page(__name__, path='/reg-season', name='Regular Season', order = 0)
 
@@ -326,20 +307,6 @@ def get_player_usage_dat(selected_team, selected_season):
     season = seasons[selected_season]
     teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
     
-    team_player_pageranks = pageranks_yr[
-        (pageranks_yr['season']==season)&
-        (pageranks_yr['team_id'].isin(teamid))&
-        (~pageranks_yr['node_name'].isin(diff_shots))
-        ]
+    player_usage_fil = player_usage[(player_usage['season']==season)&(player_usage['team_id'].isin(teamid))]
     
-    p = team_player_pageranks['pagerank'].to_numpy()
-    
-    #normalizing pageranks
-    p = p/p.sum()
-    
-    gini = gini_coef(p)
-    entropy = normalized_entropy(p)
-    eff_num_players = (1/np.sum(p**2))/len(p)
-    
-    player_df = pd.DataFrame({'season': season, 'gini': gini, 'entropy': entropy, 'eff_num_players': eff_num_players},index=[0])
-    return player_df.to_dict('records')
+    return player_usage_fil.to_dict('records')
