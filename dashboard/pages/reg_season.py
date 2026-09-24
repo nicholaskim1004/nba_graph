@@ -325,9 +325,14 @@ def update_pass_table(selected_team, selected_season, active_cell, table_data):
 def get_player_usage_dat(selected_team, selected_season):
     season = seasons[selected_season]
     teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
-    team_pageranks = pageranks_yr[(pageranks_yr['season']==season)&(pageranks_yr['team_id']==teamid)]
     
-    p = team_pageranks['pagerank'].to_numpy()
+    team_player_pageranks = pageranks_yr[
+        (pageranks_yr['season']==season)&
+        (pageranks_yr['team_id'].isin(teamid))&
+        (~pageranks_yr['node_name'].isin(diff_shots))
+        ]
+    
+    p = team_player_pageranks['pagerank'].to_numpy()
     
     #normalizing pageranks
     p = p/p.sum()
@@ -336,5 +341,5 @@ def get_player_usage_dat(selected_team, selected_season):
     entropy = normalized_entropy(p)
     eff_num_players = (1/np.sum(p**2))/len(p)
     
-    player_df = pd.DataFrame({'season': season, 'gini': gini, 'entropy': entropy, 'eff_num_players': eff_num_players})
+    player_df = pd.DataFrame({'season': season, 'gini': gini, 'entropy': entropy, 'eff_num_players': eff_num_players},index=[0])
     return player_df.to_dict('records')
