@@ -4,7 +4,7 @@ import dash_cytoscape as cyto  # type: ignore[import-not-found]
 import numpy as np # type: ignore[import-not-found]
 
 import dash # type: ignore[import-not-found]
-from dash import html, Input, Output, callback, dash_table, State, ctx, no_update# type: ignore[import-not-found]
+from dash import html, Input, Output, callback, dash_table, State, dcc, ctx, no_update# type: ignore[import-not-found]
 import plotly.express as px
 from nba_api.stats.static import teams
 
@@ -21,32 +21,18 @@ edges_yr = pd.read_sql_query(query_edge, con)
 query_page_reg = "SELECT * FROM pageranks_yr"
 pageranks_yr_reg = pd.read_sql_query(query_page_reg, con)
 
+query_player = "SELECT * FROM player_usage_yr"
+player_usage = pd.read_sql_query(query_player, con)
+
+query_player_play = "SELECT * FROM player_usage_yr_playoff"
+player_usage_play = pd.read_sql_query(query_player_play, con)
+
 team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
 
 seasons = pageranks_yr['season'].unique()
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
-
-def gini_coef(x):
-    x = np.asarray(x, dtype = np.float64)
-    
-    if np.any(x < 0):
-        raise ValueError("Gini coeff requires non negative values")
-    x = np.sort(x)
-    n = len(x)
-    index = np.arange(1, n + 1)
-
-    return (np.sum((2 * index - n - 1)* x)) / (n * np.sum(x))
-
-def normalized_entropy(p):
-    p = np.array(p)
-    p = p[p > 0]  
-    N = len(p)
-    if N <= 1:
-        return 0.0
-    H = -np.sum(p * np.log(p))
-    return H / np.log(N)
 
 dash.register_page(__name__, path='/playoffs', name='Playoffs', order = 1)
 
@@ -160,7 +146,9 @@ layout = html.Div([
         children=[
             html.H2('Regular Season vs Playoffs',
                     style={"fontFamily": 'sans-serif',"fontWeight": 'bold'}
-                    )
+                    ),
+            dcc.Graph(id='reg_v_play_heatmap',
+                      figure={})
         ]
     )
 ])
@@ -339,24 +327,59 @@ def get_player_usage_dat(selected_team, selected_season):
     season = seasons[selected_season]
     teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
     
-    team_player_pageranks = pageranks_yr[
-        (pageranks_yr['season']==season)&
-        (pageranks_yr['team_id'].isin(teamid))&
-        (~pageranks_yr['node_name'].isin(diff_shots))
-        ]
-    
-    p = team_player_pageranks['pagerank'].to_numpy()
-    
-    #normalizing pageranks
-    p = p/p.sum()
-    
-    gini = gini_coef(p)
-    entropy = normalized_entropy(p)
-    eff_num_players = (1/np.sum(p**2))/len(p)
-    
-    player_df = pd.DataFrame({'season': season, 'gini': gini, 'entropy': entropy, 'eff_num_players': eff_num_players},index=[0])
-    return player_df.to_dict('records')
+    player_usage_play_fil = player_usage_play[(player_usage_play['season']==season)&(player_usage_play['team_id']==teamid)]
+    return player_usage_play_fil.to_dict('records')
 
 #creating the regular season vs playoff difference dataframe
+@callback(
+    Output('reg_v_play_heatmap', 'figure'),
+    Input('team-dropdown','value'),
+    Input('season-slider','value')
+)
+def update_reg_v_play_fig(selected_team, selected_season):
+    season = seasons[selected_season]
+    teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
+    
+    #only the shot node pageranks
+    reg_shots_df = pageranks_yr_reg[(pageranks_yr_reg['season']==season)&
+                              (pageranks_yr_reg['node_name'].isin(diff_shots))]
 
+    play_shots_df = pageranks_yr[(pageranks_yr['season']==season)&
+                           (pageranks_yr['node_name'].isin(diff_shots))]
+    
+    #player usage metrics
+    #need to merge on
+    reg_usage = pd.melt(player_usage, id_vars=['season','team_id'], value_vars=['gini','entropy','eff_num_players'],var_name='node_name',value_name='pagerank')
+    reg_df = pd.concat([reg_shots_df,reg_usage], ignore_index=True)
+    
+    #gonna merge on the full name to reg df first 
+    reg_df = pd.merge(reg_df,team_df.loc[:,['id','full_name']],left_on='team_id',right_on='id',how='left')
+    
+    play_usage = pd.melt(player_usage_play, id_vars=['season','team_id'], value_vars=['gini','entropy','eff_num_players'],var_name='node_name',value_name='pagerank')
+    play_df = pd.concat([play_shots_df,play_usage], ignore_index=True)
+    
+    #mergining on the playoff pageranks to reg df
+    reg_n_play = pd.merge(reg_df, play_df, on='node_name', how='left')
+    reg_n_play.rename(columns={'pagerank_x':'pagerank_reg','pagerank_y':'pagerank_playoff'}, inplace=True)
+    
+    #creating new column storing the difference between two
+    reg_n_play['diff'] = reg_n_play['pagerank_reg'] - reg_n_play['pagerank_playoff']
+    
+    heat = reg_n_play.set_index('full_name')
+    heat_lab = heat.div(heat.abs().max())
+    
+    #for heatmap
+    x = reg_n_play['node_name'].to_list()
+    y = team_list
+    
+    fig = px.imshow(
+        diff.T,
+        text_auto='.3f',
+        color_continuous_scale='RdBu_r',
+        zmin=-abs(diff['difference']).max(),
+        zmax=abs(diff['difference']).max(),
+        aspect='auto'
+    )
+    fig.update_layout(coloraxis_colorbar=dict(title='Playoffs − Reg'))
+    return fig
 
