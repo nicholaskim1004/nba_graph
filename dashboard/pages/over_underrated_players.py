@@ -13,24 +13,19 @@ pos = pd.read_sql_query(query_pos, con)
 query_page = 'SELECT * FROM pageranks_yr'
 pageranks = pd.read_sql_query(query_page, con)
 
+query_avd = 'SELECT * FROM avdstats_yr'
+avdstats_yr = pd.read_sql_query(query_avd, con)
+
 #standarizing naming convention for some 
 pos.loc[pos['positions']=='Forward-Guard','positions'] = 'Guard-Forward'
 pos.loc[pos['positions']=='Forward-Center','positions'] = 'Center-Forward'
 
 
 #merging in pos to pagerank
-pos = pd.merge(pageranks.loc[:,['season','team_id','node_name','player_id']],pos.loc[:,['player_id','positions']], on='player_id', how='left')
+pageranks = pd.merge(pageranks.loc[:,['season','team_id','node_name','player_id']],pos.loc[:,['player_id','positions']], on='player_id', how='left')
 
+#merging avd stats to pos df
+pageranks_avd = pd.merge(pageranks, avdstats_yr.loc[:,['season','team_id','player_id','PIE_SHARE']], on=['player_id','season','team_id'], how='left')
+
+print(pageranks_avd.head())
 #fitting model
-model = smf.ols(
-    'pagerank ~ pie_shares + C(POS)',
-    data=pos
-).fit()
-
-pos['expected_pagerank'] = model.predict(pos)
-
-pos['pagerank_residual'] = (
-    pos['pagerank'] - pos['expected_pagerank']
-)
-
-print(pos.sort_values('pagerank_residual',ascending=False))

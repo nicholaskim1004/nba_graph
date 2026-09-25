@@ -41,7 +41,6 @@ team_df = pd.DataFrame(teams.get_teams())
 
 #merge on team full name to pageranks
 pageranks = pd.merge(pageranks,team_df.loc[:,['id','full_name']], left_on='team_id', right_on='id', how='left').drop(columns='id')
-print(pageranks.head())
 
 for yr in years:
     print(f'starting pull for season {yr}')
@@ -72,10 +71,17 @@ for yr in years:
         t_pie = np.sum(pageranks_yr[pageranks_yr['full_name']==team]['ADJ_PIE'])
         pie_shares.extend(pageranks_yr[pageranks_yr['full_name']==team]['ADJ_PIE']/t_pie)
         
-    pageranks_yr['PIE_SHARES'] = pie_shares
+    pageranks_yr['PIE_SHARE'] = pie_shares
+    pageranks_yr = pageranks_yr.rename(columns={
+                                            'TS_PCT': 'TS',
+                                            'USG_PCT': 'USG',
+                                            'PIE_SHARES': 'PIE_SHARE',
+                                            'node_name': 'player_name'
+                                        })
     
+    chunksize = pageranks_yr.shape[0]
     print(f'saving season {yr} to database...')
-    pageranks_yr.to_sql('avdstat_yr', con, if_exists='append', index=False)
+    pageranks_yr.loc[:,['season','team_id','player_id','player_name','TOTAL_MIN','PIE','PIE_SHARE','TS','USG','AST_PCT','E_OFF_RATING','E_DEF_RATING','E_NET_RATING']].to_sql('avdstats_yr', con, if_exists='append', index=False, chunksize=chunksize)
 
 print('finished')
 
