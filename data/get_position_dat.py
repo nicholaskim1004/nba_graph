@@ -2,7 +2,6 @@ import time
 import sqlite3
 import pandas as pd
 
-from nba_api.stats.static import teams
 from nba_api.stats.endpoints import CommonPlayerInfo
 
 con = sqlite3.connect('data/nba.db', timeout=10)
