@@ -368,9 +368,6 @@ def update_reg_v_play_fig(selected_team, selected_season):
         (pageranks_yr_reg['node_name'].isin(diff_shots))
     ][['team_id', 'node_name', 'pagerank']]
     
-    dup_check = reg_shots.duplicated(subset=['team_id','node_name'], keep=False)
-    print(reg_shots[dup_check])
-
     reg_usage_long = player_usage[player_usage['season'] == season].melt(
         id_vars=['team_id'], value_vars=['gini', 'entropy', 'eff_num_players'],
         var_name='node_name', value_name='pagerank'
