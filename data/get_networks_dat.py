@@ -75,7 +75,7 @@ shots_yr = pd.read_sql_query(query_sh, con)
 query_ps = "SELECT * FROM passes_yr"
 passes_yr = pd.read_sql_query(query_ps, con)
 
-team_list = teams.get_teams()
+all_teams = teams.get_teams()
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
@@ -85,7 +85,7 @@ for yr in years:
     print(f'🏀 getting network information for {yr} ⛹️‍♂️')
 
     shots_cur = shots_yr[shots_yr['season']==yr]
-    for team in team_list:
+    for team in all_teams:
         print(f"Building network for {team['full_name']} ({team['id']}) in {yr} season...")
 
         teamid = team['id']
@@ -183,7 +183,7 @@ for yr in years:
     
     #filtering team_list to only those in the playoffs for that year
     playoff_ids = passes_yr[passes_yr['season']==yr]['team_id'].unique()
-    team_list = [team for team in team_list if team['id'] in playoff_ids]
+    team_list = [team for team in all_teams if team['id'] in playoff_ids]
 
     for team in team_list:
         print(f"Building network for {team['full_name']} ({team['id']}) in {yr} season...")
