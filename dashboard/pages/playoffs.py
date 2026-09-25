@@ -132,6 +132,18 @@ layout = html.Div([
         id='player_usage_container_play',
         children=[
             html.H2('Player Usage',style={"fontFamily": 'sans-serif',"fontWeight": 'bold'}),
+            html.Div(
+                "A single metric to measure how centeralized the offense is to a select few players. "
+                "Will hopefully highlight teams that are star focused over team first basketball. "
+                "Gini coeffiencent is a measure of inequality. Smaller means more EQUAL. "
+                "Entropy is a measure of how unpredictable a teams offensive involement is. Higher means MORE unpredictable or in this case more DIVERSE. "
+                "Effective number of players is determing how many players have a meaningul pagerank or involement. Here the higher means more DIVERSE.",
+                style={
+                    "fontFamily": 'sans-serif',
+                    "fontSize": "20px",
+                    "marginTop": "0px"
+                }
+            ),
             dash_table.DataTable(
                 id='player_usage_table_play',
                 data=[],
@@ -147,6 +159,15 @@ layout = html.Div([
             html.H2('Regular Season vs Playoffs',
                     style={"fontFamily": 'sans-serif',"fontWeight": 'bold'}
                     ),
+            html.Div(
+                "Heatmap to highlight the difference in playstyle from the regular season to Playoffs. "
+                "The differences were then normalized within each column to highlight which ones took a step forward or back in respect to their own scale.",
+                style={
+                    "fontFamily": 'sans-serif',
+                    "fontSize": "20px",
+                    "marginTop": "0px"
+                }
+            ),
             dcc.Graph(id='reg_v_play_heatmap',
                       figure={})
         ]
