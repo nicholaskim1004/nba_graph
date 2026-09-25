@@ -47,3 +47,6 @@ for i, row in unique_players.iterrows():
     time.sleep(1)
     
 print('finished')
+
+cursor.close()
+con.close()
