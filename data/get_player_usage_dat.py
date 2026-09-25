@@ -94,7 +94,7 @@ for yr in years:
         
         gini = gini_coef(p)
         entropy = normalized_entropy(p)
-        eff_num_players = len(p)/np.sum(p**2)
+        eff_num_players = (1/np.sum(p**2))/len(p)
         
         pd.DataFrame({'season': str(yr), 
                       'team_id': int(teamid),
@@ -110,7 +110,7 @@ for yr in years:
 print('starting pull for playoffs 🏆')
 
 for yr in years:
-    teams_in_play = pageranks_yr_play[pageranks_yr_play['season']==yr].loc[:,'team_id'].to_numpy()
+    teams_in_play = pageranks_yr_play[pageranks_yr_play['season']==yr].loc[:,'team_id'].unique()
     
     for teamid in teams_in_play:
         pageranks_yr_play_players = pageranks_yr_play[
@@ -126,7 +126,7 @@ for yr in years:
         
         gini = gini_coef(p)
         entropy = normalized_entropy(p)
-        eff_num_players = len(p)/np.sum(p**2)
+        eff_num_players = (1/np.sum(p**2))/len(p)
         
         pd.DataFrame({'season': str(yr), 
                       'team_id': int(teamid),
