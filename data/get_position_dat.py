@@ -24,8 +24,6 @@ cursor.execute("""
 query = "SELECT DISTINCT player_id, player_name FROM shots_yr"
 unique_players = pd.read_sql_query(query, con)
 
-seen = {}
-
 N = len(unique_players)
 
 print('starting data pull')
@@ -35,18 +33,15 @@ for i, row in unique_players.iterrows():
     print(f'progress: {(i+1)/N * 100}')
     try:
         playerid = row['player_id']
+        name = row['player_name']
         
-        if playerid not in seen.keys():
-            seen[playerid] = True
-            player_inf = CommonPlayerInfo(player_id=playerid).get_data_frames()[0]
+        
+        player_inf = CommonPlayerInfo(player_id=playerid).get_data_frames()[0]
             
-            pd.DataFrame({'player_id': playerid, 'player_name': row['player_name'], 'POSITION': player_inf['POSITION']}, index=[0]).to_sql('positions', con, if_exists='append', index=False)
-        else: 
-            #skip
-            continue
-            
+        pd.DataFrame({'player_id': int(playerid), 'player_name': str(name), 'positions': str(player_inf['POSITION'])}, index=[0]).to_sql('positions', con, if_exists='append', index=False)
+
     except Exception as e:
-        print(f'having issues with {row['player_name']}: {e}') 
+        print(f'having issues with {name}: {e}') 
     
     #avoid rate limit
     time.sleep(1)
