@@ -327,7 +327,7 @@ def get_player_usage_dat(selected_team, selected_season):
     season = seasons[selected_season]
     teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
     
-    player_usage_play_fil = player_usage_play[(player_usage_play['season']==season)&(player_usage_play['team_id']==teamid)]
+    player_usage_play_fil = player_usage_play[(player_usage_play['season']==season)&(player_usage_play['team_id'].isin(teamid))]
     return player_usage_play_fil.to_dict('records')
 
 #creating the regular season vs playoff difference dataframe
@@ -345,6 +345,9 @@ def update_reg_v_play_fig(selected_team, selected_season):
         (pageranks_yr_reg['season'] == season) &
         (pageranks_yr_reg['node_name'].isin(diff_shots))
     ][['team_id', 'node_name', 'pagerank']]
+    
+    dup_check = reg_shots.duplicated(subset=['team_id','node_name'], keep=False)
+    print(reg_shots[dup_check])
 
     reg_usage_long = player_usage[player_usage['season'] == season].melt(
         id_vars=['team_id'], value_vars=['gini', 'entropy', 'eff_num_players'],
