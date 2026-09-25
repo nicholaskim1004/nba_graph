@@ -28,7 +28,7 @@ cursor.execute("""
                    AST_PCT REAL,
                    E_OFF_RATING REAL,
                    E_DEF_RATING REAL,
-                   E_NET_RATING REAL,
+                   E_NET_RATING REAL
                )
                """)
 
