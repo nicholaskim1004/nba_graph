@@ -377,39 +377,33 @@ def update_reg_v_play_fig(selected_team, selected_season):
 
     diff = (play_wide - reg_wide_aligned).fillna(0)
 
-    # team_id -> full_name for row labels, keeping diff's row order
+    # normalize each column by its own max absolute value (same as your seaborn version)
+    col_max = diff.abs().max()
+    col_max = col_max.replace(0, 1)  # avoid divide-by-zero for an all-zero column
+    diff_norm = diff.div(col_max)  # default axis='columns' aligns Series index to DataFrame columns
+
     id_to_name = team_df.set_index('id')['full_name']
     row_labels = diff.index.map(id_to_name)
 
-    zmax = diff.abs().to_numpy().max() if diff.size else 1
-    zmax = zmax if zmax > 0 else 1
-
     fig = px.imshow(
-        diff.to_numpy(),
+        diff_norm.to_numpy(),
         x=node_cols,
         y=row_labels,
-        text_auto='.2f',
         color_continuous_scale='RdBu_r',
-        zmin=-zmax,
-        zmax=zmax,
+        zmin=-1,
+        zmax=1,
         aspect='auto'
     )
-    fig.update_layout(
-        coloraxis_colorbar=dict(title='Playoffs − Reg'),
-        height=max(400, 25 * len(row_labels))
+
+    # color comes from diff_norm, but the text shown on each cell is the raw diff value
+    fig.update_traces(
+        text=diff.round(3).to_numpy(),
+        texttemplate='%{text}',
+        hovertemplate='%{y} — %{x}<br>raw diff: %{text}<br>normalized: %{z:.2f}<extra></extra>'
     )
 
-    # ---- highlight the selected team's row ----
-    row_labels_list = list(row_labels)
-    if selected_team in row_labels_list:
-        row_idx = row_labels_list.index(selected_team)
-        fig.add_shape(
-            type='rect',
-            x0=-0.5, x1=len(node_cols) - 0.5,
-            y0=row_idx - 0.5, y1=row_idx + 0.5,
-            line=dict(color='black', width=3),
-            fillcolor='rgba(0,0,0,0)',
-            layer='above'
-        )
-
+    fig.update_layout(
+        coloraxis_colorbar=dict(title='Normalized diff'),
+        height=max(400, 25 * len(row_labels))
+    )
     return fig
