@@ -144,6 +144,7 @@ layout = html.Div([
                     "marginTop": "0px"
                 }
             ),
+            html.Br(),
             dash_table.DataTable(
                 id='player_usage_table_play',
                 data=[],
