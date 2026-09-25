@@ -37,7 +37,10 @@ pageranks = pd.read_sql_query(query, con)
 
 years = ['2020-21','2021-22','2023-24','2024-25','2025-26']
 
-team_list = teams.get_teams()
+team_df = pd.DataFrame(teams.get_teams())
+
+#merge on team full name to pageranks
+pageranks = pd.merge(pageranks,team_df.loc[:,['id','full_name']], left_on='team_id', right_on='id', how='left').drop(columns='id')
 
 for yr in years:
     print(f'starting pull for season {yr}')
@@ -63,10 +66,10 @@ for yr in years:
     pie_shares = []
 
     print('starting calc pie_share')
-    for team in pageranks_yr['team'].unique():
+    for team in pageranks_yr['full_name'].unique():
         print(f'pie share adjust for team {team}')
-        t_pie = np.sum(pageranks_yr[pageranks_yr['team']==team]['ADJ_PIE'])
-        pie_shares.extend(pageranks_yr[pageranks_yr['team']==team]['ADJ_PIE']/t_pie)
+        t_pie = np.sum(pageranks_yr[pageranks_yr['full_name']==team]['ADJ_PIE'])
+        pie_shares.extend(pageranks_yr[pageranks_yr['full_name']==team]['ADJ_PIE']/t_pie)
         
     pageranks_yr['PIE_SHARES'] = pie_shares
     
