@@ -154,7 +154,7 @@ for yr in years:
         pageranks_df = pd.merge(pageranks_df,coord_df, on='node_name', how='left')   
         pageranks_df = pd.merge(pageranks_df,team_passes.loc[:,['player_name','player_id']], left_on='node_name', right_on='player_name', how='left').drop(columns=['player_name'])     
         
-        pageranks_df['player_id'] = pageranks_df['player_id'].astype(int)
+        pageranks_df['player_id'] = pageranks_df['player_id'].astype('int64')
         
         pageranks_df.to_sql('pageranks_yr', con, if_exists='append', index=False)
         print(f'saving pagerank info for {team['full_name']} in {yr} to database 💾')
@@ -257,7 +257,7 @@ for yr in years:
         pageranks_df = pd.merge(pageranks_df,coord_df, on='node_name', how='left')        
         pageranks_df = pd.merge(pageranks_df,team_passes.loc[:,['player_name','player_id']], left_on='node_name', right_on='player_name', how='left').drop(columns=['player_name'])     
         
-        pageranks_df['player_id'] = pageranks_df['player_id'].astype(int)
+        pageranks_df['player_id'] = pageranks_df['player_id'].astype('int64')
         
         pageranks_df.to_sql('pageranks_playoffs_yr', con, if_exists='append', index=False)
         print(f'saving pagerank info for {team['full_name']} in {yr} to database 💾')
