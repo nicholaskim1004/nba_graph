@@ -333,53 +333,80 @@ def get_player_usage_dat(selected_team, selected_season):
 #creating the regular season vs playoff difference dataframe
 @callback(
     Output('reg_v_play_heatmap', 'figure'),
-    Input('team-dropdown','value'),
-    Input('season-slider','value')
+    Input('team-dropdown', 'value'),
+    Input('season-slider', 'value')
 )
 def update_reg_v_play_fig(selected_team, selected_season):
     season = seasons[selected_season]
-    teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
-    
-    #only the shot node pageranks
-    reg_shots_df = pageranks_yr_reg[(pageranks_yr_reg['season']==season)&
-                              (pageranks_yr_reg['node_name'].isin(diff_shots))]
+    node_cols = diff_shots + ['gini', 'entropy', 'eff_num_players']
 
-    play_shots_df = pageranks_yr[(pageranks_yr['season']==season)&
-                           (pageranks_yr['node_name'].isin(diff_shots))]
-    
-    #player usage metrics
-    #need to merge on
-    reg_usage = pd.melt(player_usage, id_vars=['season','team_id'], value_vars=['gini','entropy','eff_num_players'],var_name='node_name',value_name='pagerank')
-    reg_df = pd.concat([reg_shots_df,reg_usage], ignore_index=True)
-    
-    #gonna merge on the full name to reg df first 
-    reg_df = pd.merge(reg_df,team_df.loc[:,['id','full_name']],left_on='team_id',right_on='id',how='left')
-    
-    play_usage = pd.melt(player_usage_play, id_vars=['season','team_id'], value_vars=['gini','entropy','eff_num_players'],var_name='node_name',value_name='pagerank')
-    play_df = pd.concat([play_shots_df,play_usage], ignore_index=True)
-    
-    #mergining on the playoff pageranks to reg df
-    reg_n_play = pd.merge(reg_df, play_df, on='node_name', how='left')
-    reg_n_play.rename(columns={'pagerank_x':'pagerank_reg','pagerank_y':'pagerank_playoff'}, inplace=True)
-    
-    #creating new column storing the difference between two
-    reg_n_play['diff'] = reg_n_play['pagerank_reg'] - reg_n_play['pagerank_playoff']
-    
-    heat = reg_n_play.set_index('full_name')
-    heat_lab = heat.div(heat.abs().max())
-    
-    #for heatmap
-    x = reg_n_play['node_name'].to_list()
-    y = team_list
-    
+    # ---- regular season: shot pageranks + usage metrics, wide format ----
+    reg_shots = pageranks_yr_reg[
+        (pageranks_yr_reg['season'] == season) &
+        (pageranks_yr_reg['node_name'].isin(diff_shots))
+    ][['team_id', 'node_name', 'pagerank']]
+
+    reg_usage_long = player_usage[player_usage['season'] == season].melt(
+        id_vars=['team_id'], value_vars=['gini', 'entropy', 'eff_num_players'],
+        var_name='node_name', value_name='pagerank'
+    )
+
+    reg_wide = pd.concat([reg_shots, reg_usage_long], ignore_index=True) \
+                 .pivot(index='team_id', columns='node_name', values='pagerank')
+
+    # ---- playoffs: same shape, only playoff teams will exist here ----
+    play_shots = pageranks_yr[
+        (pageranks_yr['season'] == season) &
+        (pageranks_yr['node_name'].isin(diff_shots))
+    ][['team_id', 'node_name', 'pagerank']]
+
+    play_usage_long = player_usage_play[player_usage_play['season'] == season].melt(
+        id_vars=['team_id'], value_vars=['gini', 'entropy', 'eff_num_players'],
+        var_name='node_name', value_name='pagerank'
+    )
+
+    play_wide = pd.concat([play_shots, play_usage_long], ignore_index=True) \
+                  .pivot(index='team_id', columns='node_name', values='pagerank')
+
+    # align both to playoff teams only + fixed column order
+    play_wide = play_wide.reindex(columns=node_cols)
+    reg_wide_aligned = reg_wide.reindex(index=play_wide.index, columns=node_cols)
+
+    diff = (play_wide - reg_wide_aligned).fillna(0)
+
+    # team_id -> full_name for row labels, keeping diff's row order
+    id_to_name = team_df.set_index('id')['full_name']
+    row_labels = diff.index.map(id_to_name)
+
+    zmax = diff.abs().to_numpy().max() if diff.size else 1
+    zmax = zmax if zmax > 0 else 1
+
     fig = px.imshow(
-        diff.T,
-        text_auto='.3f',
+        diff.to_numpy(),
+        x=node_cols,
+        y=row_labels,
+        text_auto='.2f',
         color_continuous_scale='RdBu_r',
-        zmin=-abs(diff['difference']).max(),
-        zmax=abs(diff['difference']).max(),
+        zmin=-zmax,
+        zmax=zmax,
         aspect='auto'
     )
-    fig.update_layout(coloraxis_colorbar=dict(title='Playoffs − Reg'))
-    return fig
+    fig.update_layout(
+        coloraxis_colorbar=dict(title='Playoffs − Reg'),
+        height=max(400, 25 * len(row_labels))
+    )
 
+    # ---- highlight the selected team's row ----
+    row_labels_list = list(row_labels)
+    if selected_team in row_labels_list:
+        row_idx = row_labels_list.index(selected_team)
+        fig.add_shape(
+            type='rect',
+            x0=-0.5, x1=len(node_cols) - 0.5,
+            y0=row_idx - 0.5, y1=row_idx + 0.5,
+            line=dict(color='black', width=3),
+            fillcolor='rgba(0,0,0,0)',
+            layer='above'
+        )
+
+    return fig
