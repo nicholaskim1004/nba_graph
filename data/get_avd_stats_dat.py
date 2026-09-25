@@ -17,7 +17,7 @@ cursor.execute("""
                CREATE TABLE IF NOT EXISTS avdstats_yr
                (
                    season TEXT,
-                   team_id INTEGER
+                   team_id INTEGER,
                    player_id INTEGER,
                    player_name TEXT,
                    TOTAL_MIN INTEGER,
