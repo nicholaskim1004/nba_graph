@@ -35,10 +35,11 @@ for i, row in unique_players.iterrows():
         playerid = row['player_id']
         name = row['player_name']
         
+        pos = player_inf['POSITION'].iloc[0]
         
         player_inf = CommonPlayerInfo(player_id=playerid).get_data_frames()[0]
             
-        pd.DataFrame({'player_id': int(playerid), 'player_name': str(name), 'positions': str(player_inf['POSITION'])}, index=[0]).to_sql('positions', con, if_exists='append', index=False)
+        pd.DataFrame({'player_id': int(playerid), 'player_name': str(name), 'positions': str(pos)}, index=[0]).to_sql('positions', con, if_exists='append', index=False)
 
     except Exception as e:
         print(f'having issues with {name}: {e}') 
