@@ -406,4 +406,16 @@ def update_reg_v_play_fig(selected_team, selected_season):
         coloraxis_colorbar=dict(title='Normalized diff'),
         height=max(400, 25 * len(row_labels))
     )
+    
+    row_labels_list = list(row_labels)
+    if selected_team in row_labels_list:
+        row_idx = row_labels_list.index(selected_team)
+        fig.add_shape(
+            type='rect',
+            x0=-0.5, x1=len(node_cols) - 0.5,
+            y0=row_idx - 0.5, y1=row_idx + 0.5,
+            line=dict(color='black', width=3),
+            fillcolor='rgba(0,0,0,0)',
+            layer='above'
+        )
     return fig
