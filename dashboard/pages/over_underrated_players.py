@@ -20,9 +20,9 @@ pos.loc[pos['positions']=='Forward-Guard','positions'] = 'Guard-Forward'
 pos.loc[pos['positions']=='Forward-Center','positions'] = 'Center-Forward'
 
 #mergining on player id to pagerank
-pageranks = pd.merge(pageranks.loc[:,['season','team_id','node_name','pagerank']], player_ids, left_on='node_name', right_on='player_name', how='left' )
+#pageranks = pd.merge(pageranks.loc[:,['season','team_id','node_name','pagerank']], player_ids, left_on='node_name', right_on='player_name', how='left' )
 print(pageranks.head())
-
+print(player_ids)
 #merging in pos to pagerank
 #pos = pd.merge(pageranks,pos.loc[:,['player_name','positions']], left_on='node_name', right_on='player_name', how='left')
 #print(pos.head())
