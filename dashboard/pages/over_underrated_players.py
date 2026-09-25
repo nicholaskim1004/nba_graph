@@ -25,30 +25,29 @@ diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Cor
 pos.loc[pos['positions']=='Forward-Guard','positions'] = 'Guard-Forward'
 pos.loc[pos['positions']=='Forward-Center','positions'] = 'Center-Forward'
 
+#cleaning up missing player ids before merges
+pageranks_players = pageranks[~pageranks['node_name'].isin(diff_shots)]
+wrong_ids = pageranks_players[pageranks_players['player_id'].isna()]
 
-#merging in pos to pagerank
-pageranks = pd.merge(pageranks.loc[:,['season','team_id','node_name','player_id','pagerank']],pos.loc[:,['player_id','positions']], on='player_id', how='left')
-
-#merging avd stats to pos df
-pageranks_avd = pd.merge(pageranks, avdstats_yr.loc[:,['season','team_id','player_id','PIE_SHARE']], on=['player_id','season','team_id'], how='left')
-
-#subset to only players
-pageranks_avd_players = pageranks_avd[~pageranks_avd['node_name'].isin(diff_shots)]
-
-
-wrong_ids = pageranks_avd_players[pageranks_avd_players['player_id'].isna()]
-
-player_to_id_df = pageranks_avd_players.loc[~pageranks_avd_players['player_id'].isna(),['node_name','player_id']].drop_duplicates(subset=['node_name'], ignore_index=True)
+player_to_id_df = pageranks_players.loc[~pageranks_players['player_id'].isna(),['node_name','player_id']].drop_duplicates(subset=['node_name'], ignore_index=True)
 
 for _, row in wrong_ids.iterrows():
     index = row.name
 
     player_name = row['node_name']
     
-    pageranks_avd_players.loc[index,'player_id'] = player_to_id_df.loc[player_to_id_df['node_name']==player_name,'player_id'].values
+    pageranks_players.loc[index,'player_id'] = player_to_id_df.loc[player_to_id_df['node_name']==player_name,'player_id'].values
 
-print(pageranks_avd_players[pageranks_avd_players['player_id'].isna()])
-print(pageranks_avd_players[pageranks_avd_players['node_name']=='Horford, Al'])
+
+#merging in pos to pagerank
+pageranks_players = pd.merge(pageranks_players.loc[:,['season','team_id','node_name','player_id','pagerank']],pos.loc[:,['player_id','positions']], on='player_id', how='left')
+
+#merging avd stats to pos df
+pageranks_players = pd.merge(pageranks_players, avdstats_yr.loc[:,['season','team_id','player_id','PIE_SHARE']], on=['player_id','season','team_id'], how='left')
+
+
+print(pageranks_players[pageranks_players['player_id'].isna()])
+print(pageranks_players[pageranks_players['node_name']=='Horford, Al'])
 '''
 # drop rows with missing target/predictors up front so train/test are clean
 model_data = pageranks_avd_players.dropna(subset=['pagerank', 'PIE_SHARE', 'positions']).copy()
