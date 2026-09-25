@@ -41,6 +41,7 @@ team_df = pd.DataFrame(teams.get_teams())
 
 #merge on team full name to pageranks
 pageranks = pd.merge(pageranks,team_df.loc[:,['id','full_name']], left_on='team_id', right_on='id', how='left').drop(columns='id')
+print(pageranks.head())
 
 for yr in years:
     print(f'starting pull for season {yr}')

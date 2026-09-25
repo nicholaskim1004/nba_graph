@@ -152,7 +152,10 @@ for yr in years:
                     ).reset_index(names='node_name')
         
         pageranks_df = pd.merge(pageranks_df,coord_df, on='node_name', how='left')   
-        pageranks_df = pd.merge(pageranks_df,team_passes.loc[:,['player_name','player_id']], left_on='node_name', right_on='player_name', how='left').drop(columns=['player_name'])     
+        
+        unique_ids = team_passes.loc[:,['pass_to','pass_to_id']].drop_duplicates(subset=['pass_to'], keep='first')
+        pageranks_df = pd.merge(pageranks_df,unique_ids, left_on='node_name', right_on='pass_to', how='left').drop(columns=['pass_to'])     
+        pageranks_df = pageranks_df.rename(columns={'pass_to_id': 'player_id'})
         
         pageranks_df['player_id'] = pageranks_df['player_id'].astype('Int64')
         
@@ -254,8 +257,12 @@ for yr in years:
                         columns=['x_cord', 'y_cord']
                     ).reset_index(names='node_name')
         
-        pageranks_df = pd.merge(pageranks_df,coord_df, on='node_name', how='left')        
-        pageranks_df = pd.merge(pageranks_df,team_passes.loc[:,['player_name','player_id']], left_on='node_name', right_on='player_name', how='left').drop(columns=['player_name'])     
+        pageranks_df = pd.merge(pageranks_df,coord_df, on='node_name', how='left') 
+        
+        unique_ids = team_passes.loc[:,['pass_to','pass_to_id']].drop_duplicates(subset=['pass_to'], keep='first')
+       
+        pageranks_df = pd.merge(pageranks_df,unique_ids, left_on='node_name', right_on='pass_to', how='left').drop(columns=['pass_to'])     
+        pageranks_df = pageranks_df.rename(columns={'pass_to_id': 'player_id'})
         
         pageranks_df['player_id'] = pageranks_df['player_id'].astype('Int64')
         
