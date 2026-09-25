@@ -35,6 +35,21 @@ pageranks_avd = pd.merge(pageranks, avdstats_yr.loc[:,['season','team_id','playe
 #subset to only players
 pageranks_avd_players = pageranks_avd[~pageranks_avd['node_name'].isin(diff_shots)]
 
+
+wrong_ids = pageranks_avd_players[pageranks_avd_players['player_id'].isna()]
+
+player_to_id_df = pageranks_avd_players.loc[~pageranks_avd_players['player_id'].isna(),['node_name','player_id']].drop_duplicates(subset=['node_name'], ignore_index=True)
+
+for _, row in wrong_ids.iterrows():
+    index = row.name
+
+    player_name = row['node_name']
+    
+    pageranks_avd_players.loc[index,'player_id'] = player_to_id_df.loc[player_to_id_df['node_name']==player_name,'player_id'].values
+
+print(pageranks_avd_players[pageranks_avd_players['player_id'].isna()])
+print(pageranks_avd_players[pageranks_avd_players['node_name']=='Horford, Al'])
+'''
 # drop rows with missing target/predictors up front so train/test are clean
 model_data = pageranks_avd_players.dropna(subset=['pagerank', 'PIE_SHARE', 'positions']).copy()
 
@@ -61,3 +76,4 @@ pageranks_avd_players['expected_pagerank'] = model.predict(pageranks_avd)
 pageranks_avd_players['pagerank_residual'] = pageranks_avd_players['pagerank'] - pageranks_avd_players['expected_pagerank']
 print(pageranks_avd_players.loc[pageranks_avd_players['PIE_SHARE'].isna(),['season','team_id','node_name','player_id']])
 print(pageranks_avd_players[pageranks_avd_players['PIE_SHARE'].isna()&(pageranks_avd_players['node_name']=='Horford, Al')])
+'''
