@@ -59,4 +59,4 @@ print('Test RMSE:', mean_squared_error(test_df['pagerank'], test_df['expected_pa
 # (train+test+anything else) to get expected_pagerank/residual for every row
 pageranks_avd_players['expected_pagerank'] = model.predict(pageranks_avd)
 pageranks_avd_players['pagerank_residual'] = pageranks_avd_players['pagerank'] - pageranks_avd_players['expected_pagerank']
-print(pageranks_avd_players.head(n=20))
+print(pageranks_avd_players[pageranks_avd_players['PIE_SHARE'].isna()])
