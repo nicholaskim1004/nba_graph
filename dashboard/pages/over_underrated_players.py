@@ -14,6 +14,10 @@ pageranks_avd_players = pd.read_sql_query(query, con)
 team_df = pd.DataFrame(teams.get_teams())
 seasons = pageranks_avd_players['season'].unique()
 
+#merging in team full_name
+pageranks_avd_players = pd.merge(pageranks_avd_players,team_df.loc[:,['id','full_name']],left_on='team_id',right_on='id',how='left').drop(columns='id')
+pageranks_avd_players.rename(columns={'full_name': 'team'})
+
 dash.register_page(__name__, path='/over_under_players', name='Over/Under Rated Players', order = 2)
 
 layout = html.Div([
@@ -41,7 +45,7 @@ layout = html.Div([
             data = [],
             columns = [
                 {'name': i, 'id': i}
-                for i in pageranks_avd_players.loc[:,['season','node_name','positions','PIE_SHARE','pagerank','expected_pagerank','pagerank_residual']].columns                 
+                for i in pageranks_avd_players.loc[:,['season','team','node_name','positions','PIE_SHARE','pagerank','expected_pagerank','pagerank_residual']].columns                 
             ]
         )
     )
