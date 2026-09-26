@@ -108,7 +108,7 @@ layout = html.Div([
 )
 def update_player_df(over_under, selected_team, selected_season):
     df = pageranks_avd_players
-
+    df.loc[:,['PIE_SHARE','pagerank','expected_pagerank','pagerank_residual']] = df.loc[:,['PIE_SHARE','pagerank','expected_pagerank','pagerank_residual']].round(4)
     if selected_team != 'All':
         teamid = team_df[team_df['full_name'] == selected_team]['id'].to_numpy()
         df = df[df['team_id'] == teamid[0]]
