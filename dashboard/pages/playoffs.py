@@ -351,9 +351,9 @@ def get_player_usage_dat(selected_team, selected_season):
     
     player_usage_play_fil = player_usage_play[(player_usage_play['season']==season)&(player_usage_play['team_id'].isin(teamid))]
     
-    player_usage_play_fil['gini'] = player_usage_play_fil['gini'].roud(4)
-    player_usage_play_fil['entropy'] = player_usage_play_fil['entropy'].roud(4)
-    player_usage_play_fil['eff_num_players'] = player_usage_play_fil['eff_num_players'].roud(4)
+    player_usage_play_fil['gini'] = player_usage_play_fil['gini'].round(4)
+    player_usage_play_fil['entropy'] = player_usage_play_fil['entropy'].round(4)
+    player_usage_play_fil['eff_num_players'] = player_usage_play_fil['eff_num_players'].round(4)
     
     return player_usage_play_fil.to_dict('records')
 
