@@ -23,11 +23,15 @@ layout = html.Div([
                     options=[],
                     value=0,
                     style={"fontFamily": 'sans-serif','width': '30%'}),
-    html.Br()
+    html.Br(),
+        dcc.Graph(
+        id = 'yoy_change',
+        figure = []
+    )
 ])
 
 #update the options to the node list based on the team and season
-callback(
+@callback(
     Output('node_options','options'),
     Output('node_options','value'),
     Input('team-dropdown','value'),
@@ -35,12 +39,17 @@ callback(
 )
 def update_node_list_options(selected_team, selected_season):
     teamid = team_df[team_df['full_name'] == selected_team]['id'].to_numpy()
+    sorted_seasons = np.sort(seasons)  # e.g. ['2018-19', '2019-20', '2020-21', ...]
+    season_to_idx = {s: i for i, s in enumerate(sorted_seasons)}
+
+    pageranks['season_idx'] = pageranks['season'].map(season_to_idx)
+
 
     pageranks_yr = pageranks[
-                                (pageranks['season'].astype(int) <= selected_season)&
-                                (pageranks['team_id']==teamid)
+                                (pageranks['season_idx'] <= selected_season)&
+                                (pageranks['team_id']==teamid[0])
                             ]
-    options = pageranks_yr['node_name'].unique().sort_values()
+    options = pageranks_yr['node_name'].sort_values().unique()
     value = options[0]
     
     return options, value
