@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd
 import dash
 
-from dash import html, Input, Output, callback, dash_table, State, dcc, ctx, no_update# type: ignore[import-not-found]
+from dash import html, Input, Output, callback, dash_table, dcc, no_update# type: ignore[import-not-found]
 from nba_api.stats.static import teams
 
 con = sqlite3.connect('data/nba.db', timeout=10)
