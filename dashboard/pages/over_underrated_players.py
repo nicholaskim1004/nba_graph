@@ -45,7 +45,7 @@ layout = html.Div([
             data = [],
             columns = [
                 {'name': i, 'id': i}
-                for i in pageranks_avd_players.loc[:,['season','team','node_name','positions','PIE_SHARE','pagerank','expected_pagerank','pagerank_residual']].columns                 
+                for i in pageranks_avd_players.loc[:,['season','node_name','team','positions','PIE_SHARE','pagerank','expected_pagerank','pagerank_residual']].columns                 
             ]
         )
     )
