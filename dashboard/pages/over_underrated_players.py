@@ -1,8 +1,7 @@
 import sqlite3
 import pandas as pd
-
-import statsmodels.formula.api as smf
 import dash
+
 from dash import html, Input, Output, callback, dash_table, State, dcc, ctx, no_update# type: ignore[import-not-found]
 from nba_api.stats.static import teams
 
