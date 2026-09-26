@@ -23,11 +23,7 @@ layout = html.Div([
                     options=[],
                     value=0,
                     style={"fontFamily": 'sans-serif','width': '30%'}),
-    html.Br(),
-    dcc.Graph(
-        id = 'yoy_change',
-        figure = []
-    )
+    html.Br()
 ])
 
 #update the options to the node list based on the team and season
