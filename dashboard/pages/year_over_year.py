@@ -2,6 +2,7 @@ import sqlite3
 import pandas as pd
 import numpy as np
 import dash
+import plotly.express as px
 
 from dash import html, Input, Output, callback, dash_table, State, dcc, ctx, no_update# type: ignore[import-not-found]
 from nba_api.stats.static import teams
@@ -15,6 +16,18 @@ pageranks = pd.read_sql_query(query, con)
 team_df = pd.DataFrame(teams.get_teams())
 seasons = pageranks['season'].unique()
 
+#creating a number for seasons
+sorted_seasons = np.sort(seasons)  # e.g. ['2018-19', '2019-20', '2020-21', ...]
+season_to_idx = {s: i for i, s in enumerate(sorted_seasons)}
+
+pageranks['season_idx'] = pageranks['season'].map(season_to_idx)
+
+#to make it numerical for plot
+pageranks['season_start'] = pageranks['season'].str.split('-').str[0].astype(int)
+#creating yoy change
+yoy_diff_df = pageranks.sort_values(by=['season_idx','player_id']).reset_index(drop=True)
+yoy_diff_df['pagerank_yoy_diff'] = yoy_diff_df['pagerank'].diff()
+
 dash.register_page(__name__, path='/yoy', name='Year over Year', order = 2)
 
 layout = html.Div([
@@ -26,7 +39,7 @@ layout = html.Div([
     html.Br(),
         dcc.Graph(
         id = 'yoy_change',
-        figure = []
+        figure = {}
     )
 ])
 
@@ -39,12 +52,6 @@ layout = html.Div([
 )
 def update_node_list_options(selected_team, selected_season):
     teamid = team_df[team_df['full_name'] == selected_team]['id'].to_numpy()
-    sorted_seasons = np.sort(seasons)  # e.g. ['2018-19', '2019-20', '2020-21', ...]
-    season_to_idx = {s: i for i, s in enumerate(sorted_seasons)}
-
-    pageranks['season_idx'] = pageranks['season'].map(season_to_idx)
-
-
     pageranks_yr = pageranks[
                                 (pageranks['season_idx'] <= selected_season)&
                                 (pageranks['team_id']==teamid[0])
@@ -54,6 +61,24 @@ def update_node_list_options(selected_team, selected_season):
     
     return options, value
 
+#now to create figure
+@callback(
+    Output('yoy_change','figure'),
+    Input('team-dropdown','value'),
+    Input('season-slider','value'),
+    Input('node_options','value')
+)
+def update_yoy_fig(selected_team, selected_season, selected_node):
+    teamid = team_df[team_df['full_name'] == selected_team]['id'].to_numpy()
+    
+    node_yoy = pageranks[
+                    (pageranks['season_idx']<=selected_season)&
+                    (pageranks['team_id']==teamid[0])&
+                    (pageranks['node_name']=='selected_node')
+                ]
+    
+    fig = px.line(node_yoy.loc[:,['season_start','pagerank']], x='Season', y='pagerank', title='Pagerank over Time' )
+    return fig
 
 cursor.close()
 con.close()
