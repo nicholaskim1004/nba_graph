@@ -75,7 +75,18 @@ for yr in years:
                 team_inf = inf[(inf['SEASON_ID']==yr)&(inf['TEAM_ID']!=0)]
                 
                 if len(team_inf) == 1:
-                    shots_yr.loc[shots_yr['player_id'] == player,'min'] = int(team_inf['MIN'].values[0])
+                    correct_team_id = int(team_inf['TEAM_ID'].values[0])
+    
+                    shots_yr.loc[shots_yr['player_id'] == player, 'min'] = int(team_inf['MIN'].values[0])
+                    
+                    # safeguard: leaguedashplayershotlocations sometimes tags a player's
+                    # CURRENT team_id rather than the season-accurate one. PlayerCareerStats
+                    # (filtered to this season) is the source of truth, so overwrite if they disagree.
+                    existing_team_id = shots_yr.loc[shots_yr['player_id'] == player, 'team_id'].values[0]
+                    if existing_team_id != correct_team_id:
+                        print(f"⚠️ team_id mismatch for player {player} in {yr}: "
+                            f"shots_yr had {existing_team_id}, career stats says {correct_team_id} — correcting")
+                        shots_yr.loc[shots_yr['player_id'] == player, 'team_id'] = correct_team_id
                 
                 else:    
                     #storing the player_id, team_id, and total minutes to later add onto the shots df

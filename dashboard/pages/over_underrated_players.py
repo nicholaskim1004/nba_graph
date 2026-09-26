@@ -45,8 +45,10 @@ pageranks_players = pd.merge(pageranks_players.loc[:,['season','team_id','node_n
 #merging avd stats to pos df
 pageranks_players = pd.merge(pageranks_players, avdstats_yr.loc[:,['season','team_id','player_id','PIE_SHARE']], on=['player_id','season','team_id'], how='left')
 
-
-print(pageranks_players[pageranks_players['player_id'].isna()])
+#the team ids in passes is wrong for some season
+#despite it being wrong we'll keep it consistent
+#need to replace those team ids to be same as in a passes
+print(avdstats_yr[(avdstats_yr['player_id']==201143.0)])
 print(pageranks_players[pageranks_players['node_name']=='Horford, Al'])
 '''
 # drop rows with missing target/predictors up front so train/test are clean
