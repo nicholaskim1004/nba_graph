@@ -39,7 +39,7 @@ app.layout = html.Div([
     ),
     html.Br(),    
     
-    html.Label('Team',style={"fontFamily": 'sans-serif'}),
+    html.Label('Team',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
     dcc.Dropdown(id='team-dropdown',
                  options=sorted(team_list,reverse=False),
                  value=team_list[0],
@@ -47,7 +47,7 @@ app.layout = html.Div([
     
     html.Br(),
     
-    html.Label('Season',style={"fontFamily": 'sans-serif'}),
+    html.Label('Season',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
     html.Div(
         dcc.Slider(id='season-slider',
                min=0,
