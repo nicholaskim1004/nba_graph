@@ -110,8 +110,11 @@ def update_team_list(selected_season, pathname):
     season_teams = team_df[team_df['id'].isin(season_team_ids)]['full_name'].to_numpy()
     season_teams = sorted(season_teams)
 
-    # reset to first valid team if current selection isn't in the new list
-    default_value = season_teams[0] if len(season_teams) else None
+    if pathname == '/over_under_players':
+        season_teams = ['All'] + season_teams
+        default_value = 'All'
+    else:
+        default_value = season_teams[0] if len(season_teams) else None
     
     return season_teams, default_value
 
