@@ -35,7 +35,7 @@ cursor.execute("""
 query = "SELECT * FROM pageranks_yr"
 pageranks = pd.read_sql_query(query, con)
 
-years = ['2020-21','2021-22','2023-24','2024-25','2025-26']
+years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
 
 team_df = pd.DataFrame(teams.get_teams())
 
