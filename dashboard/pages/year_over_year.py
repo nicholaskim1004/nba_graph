@@ -74,10 +74,11 @@ def update_yoy_fig(selected_team, selected_season, selected_node):
     node_yoy = pageranks[
                     (pageranks['season_idx']<=selected_season)&
                     (pageranks['team_id']==teamid[0])&
-                    (pageranks['node_name']=='selected_node')
+                    (pageranks['node_name']==selected_node)
                 ]
     
-    fig = px.line(node_yoy.loc[:,['season_start','pagerank']], x='Season', y='pagerank', title='Pagerank over Time' )
+    fig = px.line(node_yoy.loc[:,['season_start','pagerank']], x='season_start', y='pagerank', title='Pagerank over Time' )
+    fig.update_xaxes(dtick=1)
     return fig
 
 cursor.close()
