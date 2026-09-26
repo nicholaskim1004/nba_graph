@@ -17,8 +17,7 @@ seasons = pageranks_avd_players['season'].unique()
 dash.register_page(__name__, path='/over_under_players', name='Over/Under Rated Players', order = 2)
 
 layout = html.Div([
-    html.Label('Choice',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
-    html.Br(),
+    html.Label('Choice:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
     dcc.Dropdown(id='over_or_under_choice',
                     options=['Overrated','Underrated'],
                     value='Overrated',
