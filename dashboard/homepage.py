@@ -118,5 +118,22 @@ def update_team_list(selected_season, pathname):
     
     return season_teams, default_value
 
+@app.callback(
+    Output('season-slider','value'),
+    Output('season-slider', 'marks'),
+    Output('season-slider', 'max'),
+    Input("_pages_location", "pathname")
+)
+def update_season_slider_options(pathname):
+    marks = {i: seasons[i] for i in range(len(seasons)) }
+    max = len(seasons)-1
+    value = max
+    if pathname == '/over_under_players':
+        marks['i'] = 'All'
+        max += 1
+        value += 1
+    
+    return value, marks, max
+
 if __name__ == "__main__":
     app.run(debug=True)
