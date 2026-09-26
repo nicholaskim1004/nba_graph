@@ -15,7 +15,7 @@ pageranks = pd.read_sql_query(query, con)
 team_df = pd.DataFrame(teams.get_teams())
 seasons = pageranks['season'].unique()
 
-dash.register_page(__name__, path='/yoy', name='Year over Year', order = 3)
+dash.register_page(__name__, path='/yoy', name='Year over Year', order = 2)
 
 layout = html.Div([
     html.Label('Node:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
@@ -26,7 +26,7 @@ layout = html.Div([
     html.Br(),
     dcc.Graph(
         id = 'yoy_change',
-        figure = 0
+        figure = []
     )
 ])
 

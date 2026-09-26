@@ -18,7 +18,7 @@ seasons = pageranks_avd_players['season'].unique()
 pageranks_avd_players = pd.merge(pageranks_avd_players,team_df.loc[:,['id','full_name']],left_on='team_id',right_on='id',how='left').drop(columns='id')
 pageranks_avd_players = pageranks_avd_players.rename(columns={'full_name': 'team'})
 
-dash.register_page(__name__, path='/over_under_players', name='Over/Under Rated Players', order = 2)
+dash.register_page(__name__, path='/over_under_players', name='Over/Under Rated Players', order = 3)
 
 layout = html.Div([
     html.Label('Choice:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
