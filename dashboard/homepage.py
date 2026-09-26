@@ -100,22 +100,26 @@ def update_active_tab(pathname):
     Input("_pages_location", "pathname")
 )
 def update_team_list(selected_season, pathname):
-    season = seasons[selected_season]
-    
     if pathname == '/playoffs':
         df = pageranks_play
     else:
         df = pageranks_yr
-    season_team_ids = df[df['season'] == season]['team_id'].unique()
-    season_teams = team_df[team_df['id'].isin(season_team_ids)]['full_name'].to_numpy()
-    season_teams = sorted(season_teams)
+
+    if selected_season < len(seasons):
+        season = seasons[selected_season]
+        season_team_ids = df[df['season'] == season]['team_id'].unique()
+    else:
+        # "All" selected on the season slider
+        season_team_ids = df['team_id'].unique()
+
+    season_teams = sorted(team_df[team_df['id'].isin(season_team_ids)]['full_name'].to_numpy())
 
     if pathname == '/over_under_players':
         season_teams = ['All'] + season_teams
         default_value = 'All'
     else:
         default_value = season_teams[0] if len(season_teams) else None
-    
+
     return season_teams, default_value
 
 @app.callback(
@@ -129,8 +133,8 @@ def update_season_slider_options(pathname):
     max = len(seasons)-1
     value = max
     if pathname == '/over_under_players':
-        marks['i'] = 'All'
         max += 1
+        marks[max] = 'All'
         value += 1
     
     return value, marks, max
