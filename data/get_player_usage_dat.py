@@ -46,7 +46,7 @@ pageranks_yr_play = pd.read_sql_query(query_page_play, con)
 
 team_list = teams.get_teams()
 
-years = ['2020-21','2021-22', '2022-23', '2024-25', '2025-26']
+years = ['2020-21','2021-22', '2022-23', '2023-24', '2024-25', '2025-26']
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
