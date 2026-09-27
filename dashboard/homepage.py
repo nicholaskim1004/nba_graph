@@ -25,7 +25,7 @@ app.layout = html.Div([
     html.Div(
         style = {'display': 'flex', 'flexDirection': 'row'},
         children=[
-            html.Img(src='/assets/nba_logo.png', style={'width': '5%', 'height': 'auto'}),
+            html.Img(src='/assets/logos/nba_logo.png', style={'width': '5%', 'height': 'auto'}),
 
             html.H1("NBA GRAPH NETWORKS",
                     style={
@@ -33,18 +33,26 @@ app.layout = html.Div([
                         "fontWeight": 'bold'})
             ]
     ),
-
     html.Div(
-        "How are NBA Offenses different? Do teams follow a similar pattern? "
-        "Do strategies change in the Playoffs? All these questions can be "
-        "answered using network structure! This dashboard will display the "
-        "results from a network for a given season and team.",
-        style={
-            "fontFamily": 'sans-serif',
-            "fontSize": "20px",
-            "marginTop": "0px"
-        }
-    ),
+        style = {'display': 'flex', 'flexDirection': 'row'},
+        children = [
+            html.Div(
+                    "How are NBA Offenses different? Do teams follow a similar pattern? "
+                    "Do strategies change in the Playoffs? All these questions can be "
+                    "answered using network structure! This dashboard will display the "
+                    "results from a network for a given season and team.",
+                    style={
+                        "fontFamily": 'sans-serif',
+                        "fontSize": "20px",
+                        "marginTop": "0px"
+                    }
+                ),
+            html.Img(id = 'team-logo',
+                     src = '',
+                     style={'width': '5%', 'height': 'auto'})
+        ]
+        ),
+
     html.Br(),    
     
     html.Label('Team',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
@@ -99,7 +107,7 @@ def update_active_tab(pathname):
         )
         for page in dash.page_registry.values()
     ]
-
+    
 #dynamically change list of team to teams in playoffs for selected season 
 @app.callback(
     Output("team-dropdown", "options"),
@@ -155,6 +163,25 @@ def update_season_slider_options(pathname):
         value += 1
     
     return value, marks, max
+
+#to display correct team
+@app.callback(
+    Output('team-logo', 'src'),
+    Input('team-dropdown', 'value')
+)
+def show_correct_logo(selected_team):
+    team_split = selected_team.split(" ")
+    
+    if len(team_split) == 3:
+        team = team_split[2]
+    else:
+        team = team_split[1]
+    
+    src = f'/assets/logos/{team.lower()}.png'
+    print(team.lower())
+    print(src)
+    return src
+
 
 if __name__ == "__main__":
     app.run(debug=True)
