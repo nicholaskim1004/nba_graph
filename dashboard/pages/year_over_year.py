@@ -173,11 +173,20 @@ def update_yoy_heatmap(selected_team, selected_season, selected_player_id):
     pivot.columns = pivot.columns.astype(str)
     
     row_mean = pivot.mean(axis=1)
-    row_std = pivot.std(axis=1).replace(0, np.nan)
-    pivot_z = pivot.sub(row_mean, axis=0).div(row_std, axis=0)
+    row_std = pivot.std(axis=1)
+
+    # Need at least 2 valid seasons to compute a meaningful per-player std;
+    # otherwise just show the raw diff so the heatmap isn't blank
+    enough_history = pivot.notna().sum(axis=1) >= 2
+    row_std_safe = row_std.where(enough_history & (row_std != 0))
+
+    pivot_z = pivot.sub(row_mean, axis=0).div(row_std_safe, axis=0)
+
+    # For rows that couldn't be z-scored, fall back to the raw diff value itself
+    pivot_display = pivot_z.where(enough_history, pivot)
 
     fig = px.imshow(
-        pivot_z,
+        pivot_display,
         color_continuous_scale='RdBu_r',
         color_continuous_midpoint=0,
         aspect='auto',
