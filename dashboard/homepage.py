@@ -33,34 +33,53 @@ app.layout = html.Div([
                         "fontWeight": 'bold'})
             ]
     ),
-    html.Div(
-        style = {'display': 'flex', 'flexDirection': 'row'},
-        children = [
-            html.Div(
-                    "How are NBA Offenses different? Do teams follow a similar pattern? "
-                    "Do strategies change in the Playoffs? All these questions can be "
-                    "answered using network structure! This dashboard will display the "
-                    "results from a network for a given season and team.",
-                    style={
-                        "fontFamily": 'sans-serif',
-                        "fontSize": "20px",
-                        "marginTop": "0px"
-                    }
-                ),
-            html.Img(id = 'team-logo',
-                     src = '',
-                     style={'width': '5%', 'height': 'auto'})
-        ]
-        ),
 
-    html.Br(),    
-    
-    html.Label('Team',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
-    dcc.Dropdown(id='team-dropdown',
-                 options=sorted(team_list,reverse=False),
-                 value=team_list[0],
-                 style={"fontFamily": 'sans-serif','width': '50%'}),
-    
+    html.Div(
+        style={
+            'display': 'grid',
+            'gridTemplateColumns': '1fr 280px',
+            'gridTemplateRows': 'auto auto',
+            'gridTemplateAreas': '"desc logo" "dropdown logo"',
+            'columnGap': '24px',
+            'alignItems': 'stretch'
+        },
+        children=[
+            html.Div(
+                "How are NBA Offenses different? Do teams follow a similar pattern? "
+                "Do strategies change in the Playoffs? All these questions can be "
+                "answered using network structure! This dashboard will display the "
+                "results from a network for a given season and team.",
+                style={
+                    "fontFamily": 'sans-serif',
+                    "fontSize": "20px",
+                    "gridArea": "desc"
+                }
+            ),
+            html.Div(
+                style={'gridArea': 'dropdown'},
+                children=[
+                    html.Label('Team', style={"fontFamily": 'sans-serif', 'font-weight': 'bold'}),
+                    dcc.Dropdown(
+                        id='team-dropdown',
+                        options=sorted(team_list, reverse=False),
+                        value=team_list[0],
+                        style={"fontFamily": 'sans-serif', 'width': '60%'}
+                    )
+                ]
+            ),
+            html.Img(
+                id='team-logo',
+                src='',
+                style={
+                    'gridArea': 'logo',
+                    'width': '50%',
+                    'height': 'auto',
+                    'objectFit': 'contain'
+                }
+            )
+        ]
+    ),
+
     html.Br(),
     
     html.Label('Season',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
@@ -178,8 +197,7 @@ def show_correct_logo(selected_team):
         team = team_split[1]
     
     src = f'/assets/logos/{team.lower()}.png'
-    print(team.lower())
-    print(src)
+
     return src
 
 
