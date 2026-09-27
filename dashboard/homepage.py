@@ -2,7 +2,7 @@
 import dash # type: ignore[import-not-found]
 import sqlite3
 import pandas as pd # type: ignore[import-not-found]
-from dash import Dash, html, dcc, Output, Input # type: ignore[import-not-found]
+from dash import Dash, html, dcc, Output, Input, ctx, State, no_update # type: ignore[import-not-found]
 from nba_api.stats.static import teams
 
 con = sqlite3.connect('data/nba.db', timeout=10)
@@ -97,30 +97,39 @@ def update_active_tab(pathname):
     Output("team-dropdown", "options"),
     Output("team-dropdown", "value"),
     Input("season-slider", "value"),
-    Input("_pages_location", "pathname")
+    Input("_pages_location", "pathname"),
+    State("team-dropdown", "value")
 )
-def update_team_list(selected_season, pathname):
+def update_team_list(selected_season, pathname, current_team_value):
+    triggered = ctx.triggered_id
+
+    # Slider moved on a non-playoffs page: nothing should change
+    if triggered == "season-slider" and pathname != "/playoffs":
+        return no_update, no_update
+
     if pathname == '/playoffs':
         df = pageranks_play
-    else:
-        df = pageranks_yr
-
-    if selected_season < len(seasons):
         season = seasons[selected_season]
         season_team_ids = df[df['season'] == season]['team_id'].unique()
+        team_options = sorted(team_df[team_df['id'].isin(season_team_ids)]['full_name'].to_numpy())
     else:
-        # "All" selected on the season slider
-        season_team_ids = df['team_id'].unique()
-
-    season_teams = sorted(team_df[team_df['id'].isin(season_team_ids)]['full_name'].to_numpy())
+        df = pageranks_yr
+        team_options = sorted(team_df['full_name'].to_numpy())
 
     if pathname == '/over_under_players':
-        season_teams = ['All'] + season_teams
-        default_value = 'All'
-    else:
-        default_value = season_teams[0] if len(season_teams) else None
+        team_options = ['All'] + team_options
 
-    return season_teams, default_value
+    # If we're recomputing (page changed, or playoffs season changed),
+    # keep the user's current team if it's still valid for the new option set;
+    # otherwise fall back to a sensible default.
+    if pathname == '/over_under_players':
+        default_value = 'All'
+    elif current_team_value in team_options:
+        default_value = current_team_value
+    else:
+        default_value = team_options[0] if len(team_options) else None
+
+    return team_options, default_value
 
 @app.callback(
     Output('season-slider','value'),
