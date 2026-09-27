@@ -126,9 +126,11 @@ def update_team_list(selected_season, pathname):
     Output('season-slider','value'),
     Output('season-slider', 'marks'),
     Output('season-slider', 'max'),
-    Input("_pages_location", "pathname")
+    Input("_pages_location", "pathname"),
+    Input('team-dropdown', 'value'),
+    Input('node_options', 'value')
 )
-def update_season_slider_options(pathname):
+def update_season_slider_options(pathname, selected_team, selected_node):
     marks = {i: seasons[i] for i in range(len(seasons)) }
     max = len(seasons)-1
     value = max

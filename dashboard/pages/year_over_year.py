@@ -78,7 +78,7 @@ def update_yoy_fig(selected_team, selected_season, selected_node):
                 ]
     
     fig = px.line(node_yoy.loc[:,['season_start','pagerank']], x='season_start', y='pagerank', title='Pagerank over Time' )
-    fig.update_xaxes(dtick=1)
+    
     return fig
 
 cursor.close()
