@@ -19,7 +19,7 @@ team_list = team_df['full_name'].to_numpy()
 
 seasons = pageranks_yr['season'].unique()
 
-app = Dash(__name__, use_pages=True, pages_folder="dashboard/pages", suppress_callback_exceptions=True)
+app = Dash(__name__, use_pages=True, suppress_callback_exceptions=True)
 app.server
 
 app.layout = html.Div([
