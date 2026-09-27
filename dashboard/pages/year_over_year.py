@@ -47,12 +47,7 @@ assert not pageranks[pageranks['player_id'].between(0,7)]['node_name'].isin(diff
 
 dash.register_page(__name__, path='/yoy', name='Year over Year', order = 2)
 
-layout = html.Div(
-    style={
-        'backgroundColor': '#DEC39E', 
-        'minHeight': '100vh'  # Ensures the background stretches to the bottom of the screen
-    },
-    children = [
+layout = html.Div([
     html.Label('Node:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
     dcc.Dropdown(id='node_options',
                     options=[],

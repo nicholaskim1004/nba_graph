@@ -193,6 +193,8 @@ def show_correct_logo(selected_team):
     
     if len(team_split) == 3:
         team = team_split[2]
+    elif selected_team == 'All':
+        return None
     else:
         team = team_split[1]
     
