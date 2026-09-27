@@ -22,10 +22,18 @@ seasons = pageranks_yr['season'].unique()
 app = Dash(__name__, use_pages=True,suppress_callback_exceptions=True)
 
 app.layout = html.Div([
-    html.H1("NBA GRAPH NETWORKS",
-            style={
-                "fontFamily": 'sans-serif',
-                "fontWeight": 'bold'}),
+    html.Div(
+        style = {'display': 'flex', 'flexDirection': 'row'},
+        children=[
+            html.Img(src='/assets/nba_logo.png', style={'width': '5%', 'height': 'auto'}),
+
+            html.H1("NBA GRAPH NETWORKS",
+                    style={
+                        "fontFamily": 'sans-serif',
+                        "fontWeight": 'bold'})
+            ]
+    ),
+
     html.Div(
         "How are NBA Offenses different? Do teams follow a similar pattern? "
         "Do strategies change in the Playoffs? All these questions can be "
