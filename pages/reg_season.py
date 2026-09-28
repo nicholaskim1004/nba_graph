@@ -19,6 +19,9 @@ edges_yr = pd.read_sql_query(query_edge, con)
 query_player = "SELECT * FROM player_usage_yr"
 player_usage = pd.read_sql_query(query_player, con)
 
+query_team_records = "SELECT * FROM records_yr"
+team_records = pd.read_sql_query(query_team_records, con)
+
 team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
 
@@ -121,8 +124,10 @@ layout = html.Div([
     ),
     html.Div(
         id='player_usage_container',
+        style={'display': 'flex',
+               'flexDirection': 'row',},
         children=[
-            html.H2('Player Usage',style={"fontFamily": 'sans-serif',"fontWeight": 'bold'}),
+            html.H2('Player Usage',style={"fontFamily": 'sans-serif',"fontWeight": 'bold', 'display':'flex'}),
             html.Div(
                         "A single metric to measure how centeralized the offense is to a select few players. "
                         "Will hopefully highlight teams that are star focused over team first basketball. "
@@ -132,7 +137,8 @@ layout = html.Div([
                         style={
                             "fontFamily": 'sans-serif',
                             "fontSize": "20px",
-                            "marginTop": "0px"
+                            "marginTop": "0px",
+                            'display': 'flex'
                         }
                     ),
             dash_table.DataTable(
@@ -140,6 +146,12 @@ layout = html.Div([
                 data=[],
                 columns=[{'name': i, 'id': i}
                         for i in ['season','gini','entropy','eff_num_players']]
+            ),
+            html.H2('League Standings',style={"fontFamily": 'sans-serif',"fontWeight": 'bold', 'display':'flex'}),
+            dash_table.DataTable(
+                id='league-standings-table',
+                columns=[{'name': i, 'id': i}
+                        for i in ['league_rank','conference','team','record']]
             )
         ]
     )
@@ -326,3 +338,16 @@ def get_player_usage_dat(selected_team, selected_season):
     player_usage_fil['eff_num_players'] = player_usage_fil['eff_num_players'].round(4)
     
     return player_usage_fil.to_dict('records')
+
+#to display the league standings dynamically
+@callback(
+    Output('league-standings-table','data'),
+    Input('season-slider','value')
+)
+def update_league_standings(selected_season):
+    season = seasons[selected_season]
+    
+    seas_ranking = team_records.loc[team_records['season']==season,['league_rank','conference','team_name','record']]
+    seas_ranking = seas_ranking.rename(columns={'team_name':'team'})
+    
+    return seas_ranking.sort_values('league_rank').to_dict('records')
