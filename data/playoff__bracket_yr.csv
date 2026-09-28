@@ -1,0 +1,106 @@
+season,conference,round,series,winning_team,losing_team
+2020-21,west,first_round,4-1,Los Angeles Lakers,Portland Trail Blazers
+2020-21,west,first_round,4-2,Los Angeles Clippers,Dallas Mavericks
+2020-21,west,first_round,4-3,Houston Rockets,Oklahoma City Thunder
+2020-21,west,first_round,4-3,Denver Nuggets,Utah Jazz
+2020-21,east,first_round,4-0,Toronto Raptors,Brooklyn Nets
+2020-21,east,first_round,4-1,Milwaukee Bucks,Orlando Magic
+2020-21,east,first_round,4-0,Miami Heat,Indiana Pacers
+2020-21,east,first_round,4-0,Boston Celtics,Philadelphia 76ers
+2020-21,west,conf_semi_final,4-1,Los Angeles Lakers,Houston Rockets
+2020-21,west,conf_semi_final,4-3,Denver Nuggets,Los Angeles Clippers
+2020-21,east,conf_semi_final,4-1,Miami Heat,Milwaukee Bucks
+2020-21,east,conf_semi_final,4-3,Boston Celtics,Toronto Raptors
+2020-21,west,conf_final,4-1,Los Angeles Lakers,Denver Nuggets
+2020-21,east,conf_final,4-2,Miami Heat,Boston Celtics
+2020-21,neutral,finals,4-2,Los Angeles Lakers,Miami Heat
+2021-22,west,first_round,4-1,Utah Jazz,Memphis Grizzlies
+2021-22,west,first_round,4-2,Phoenix Suns,Los Angeles Lakers
+2021-22,west,first_round,4-3,Los Angeles Clippers,Dallas Mavericks
+2021-22,west,first_round,4-2,Denver Nuggets,Portland Trail Blazers
+2021-22,east,first_round,4-1,Philadelphia 76ers,Washington Wizards
+2021-22,east,first_round,4-0,Milwaukee Bucks,Miami Heat
+2021-22,east,first_round,4-1,Brooklyn Nets,Boston Celtics
+2021-22,east,first_round,4-1,Atlanta Hawks,New York Knicks
+2021-22,west,conf_semi_final,4-0,Phoenix Suns,Denver Nuggets
+2021-22,west,conf_semi_final,4-2,Los Angeles Clippers,Utah Jazz
+2021-22,east,conf_semi_final,4-3,Milwaukee Bucks,Brooklyn Nets
+2021-22,east,conf_semi_final,4-3,Atlanta Hawks,Philadelphia 76ers
+2021-22,west,conf_final,4-2,Phoenix Suns,Los Angeles Clippers
+2021-22,east,conf_final,4-2,Milwaukee Bucks,Atlanta Hawks
+2021-22,neutral,finals,4-2,Milwaukee Bucks,Phoenix Suns
+2022-23,west,first_round,4-2,Phoenix Suns,New Orleans Pelicans
+2022-23,west,first_round,4-2,Memphis Grizzlies,Minnesota Timberwolves
+2022-23,west,first_round,4-1,Golden State Warriors,Denver Nuggets
+2022-23,west,first_round,4-2,Dallas Mavericks,Utah Jazz
+2022-23,east,first_round,4-2,Philadelphia 76ers,Toronto Raptors
+2022-23,east,first_round,4-1,Milwaukee Bucks,Chicago Bulls
+2022-23,east,first_round,4-1,Miami Heat,Atlanta Hawks
+2022-23,east,first_round,4-0,Boston Celtics,Brooklyn Nets
+2022-23,west,conf_semi_final,4-2,Golden State Warriors,Memphis Grizzlies
+2022-23,west,conf_semi_final,4-3,Dallas Mavericks,Phoenix Suns
+2022-23,east,conf_semi_final,4-2,Miami Heat,Philadelphia 76ers
+2022-23,east,conf_semi_final,4-3,Boston Celtics,Milwaukee Bucks
+2022-23,west,conf_final,4-1,Golden State Warriors,Dallas Mavericks
+2022-23,east,conf_final,4-3,Boston Celtics,Miami Heat
+2022-23,neutral,finals,4-2,Golden State Warriors,Boston Celtics
+2023-24,west,first_round,4-1,Phoenix Suns,Los Angeles Clippers
+2023-24,west,first_round,4-2,Los Angeles Lakers,Memphis Grizzlies
+2023-24,west,first_round,4-3,Golden State Warriors,Sacramento Kings
+2023-24,west,first_round,4-1,Denver Nuggets,Minnesota Timberwolves
+2023-24,east,first_round,4-0,Philadelphia 76ers,Brooklyn Nets
+2023-24,east,first_round,4-1,New York Knicks,Cleveland Cavaliers
+2023-24,east,first_round,4-1,Miami Heat,Milwaukee Bucks
+2023-24,east,first_round,4-2,Boston Celtics,Atlanta Hawks
+2023-24,west,conf_semi_final,4-2,Los Angeles Lakers,Golden State Warriors
+2023-24,west,conf_semi_final,4-2,Denver Nuggets,Phoenix Suns
+2023-24,east,conf_semi_final,4-2,Miami Heat,New York Knicks
+2023-24,east,conf_semi_final,4-3,Boston Celtics,Philadelphia 76ers
+2023-24,west,conf_final,4-0,Denver Nuggets,Los Angeles Lakers
+2023-24,east,conf_final,4-3,Miami Heat,Boston Celtics
+2023-24,neutral,finals,4-1,Denver Nuggets,Miami Heat
+2023-24,west,first_round,4-0,Oklahoma City Thunder,New Orleans Pelicans
+2023-24,west,first_round,4-0,Minnesota Timberwolves,Phoenix Suns
+2023-24,west,first_round,4-1,Denver Nuggets,Los Angeles Lakers
+2023-24,west,first_round,4-2,Dallas Mavericks,Los Angeles Clippers
+2023-24,east,first_round,4-2,New York Knicks,Philadelphia 76ers
+2023-24,east,first_round,4-2,Indiana Pacers,Milwaukee Bucks
+2023-24,east,first_round,4-3,Cleveland Cavaliers,Orlando Magic
+2023-24,east,first_round,4-1,Boston Celtics,Miami Heat
+2023-24,west,conf_semi_final,4-3,Minnesota Timberwolves,Denver Nuggets
+2023-24,west,conf_semi_final,4-2,Dallas Mavericks,Oklahoma City Thunder
+2023-24,east,conf_semi_final,4-3,Indiana Pacers,New York Knicks
+2023-24,east,conf_semi_final,4-1,Boston Celtics,Cleveland Cavaliers
+2023-24,west,conf_final,4-1,Dallas Mavericks,Minnesota Timberwolves
+2023-24,east,conf_final,4-0,Boston Celtics,Indiana Pacers
+2023-24,neutral,finals,4-1,Boston Celtics,Dallas Mavericks
+2024-25,west,first_round,4-0,Oklahoma City Thunder,Memphis Grizzlies
+2024-25,west,first_round,4-1,Minnesota Timberwolves,Los Angeles Lakers
+2024-25,west,first_round,4-3,Golden State Warriors,Houston Rockets
+2024-25,west,first_round,4-3,Denver Nuggets,Los Angeles Clippers
+2024-25,east,first_round,4-2,New York Knicks,Detroit Pistons
+2024-25,east,first_round,4-1,Indiana Pacers,Milwaukee Bucks
+2024-25,east,first_round,4-0,Cleveland Cavaliers,Miami Heat
+2024-25,east,first_round,4-1,Boston Celtics,Orlando Magic
+2024-25,west,conf_semi_final,4-3,Oklahoma City Thunder,Denver Nuggets
+2024-25,west,conf_semi_final,4-1,Minnesota Timberwolves,Golden State Warriors
+2024-25,east,conf_semi_final,4-2,New York Knicks,Boston Celtics
+2024-25,east,conf_semi_final,4-1,Indiana Pacers,Cleveland Cavaliers
+2024-25,west,conf_final,4-1,Oklahoma City Thunder,Minnesota Timberwolves
+2024-25,east,conf_final,4-2,Indiana Pacers,New York Knicks
+2024-25,neutral,finals,4-3,Oklahoma City Thunder,Indiana Pacers
+2025-26,west,first_round,4-1,San Antonio Spurs,Portland Trail Blazers
+2025-26,west,first_round,4-0,Oklahoma City Thunder,Phoenix Suns
+2025-26,west,first_round,4-2,Minnesota Timberwolves,Denver Nuggets
+2025-26,west,first_round,4-2,Los Angeles Lakers,Houston Rockets
+2025-26,east,first_round,4-3,Philadelphia 76ers,Boston Celtics
+2025-26,east,first_round,4-2,New York Knicks,Atlanta Hawks
+2025-26,east,first_round,4-3,Detroit Pistons,Orlando Magic
+2025-26,east,first_round,4-3,Cleveland Cavaliers,Toronto Raptors
+2025-26,west,conf_semi_final,4-2,San Antonio Spurs,Minnesota Timberwolves
+2025-26,west,conf_semi_final,4-0,Oklahoma City Thunder,Los Angeles Lakers
+2025-26,east,conf_semi_final,4-0,New York Knicks,Philadelphia 76ers
+2025-26,east,conf_semi_final,4-3,Cleveland Cavaliers,Detroit Pistons
+2025-26,west,conf_final,4-3,San Antonio Spurs,Oklahoma City Thunder
+2025-26,east,conf_final,4-0,New York Knicks,Cleveland Cavaliers
+2025-26,neutral,finals,4-1,New York Knicks,San Antonio Spurs
