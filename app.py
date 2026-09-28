@@ -14,6 +14,9 @@ pageranks_yr = pd.read_sql_query(query_page, con)
 query_play = "SELECT * FROM pageranks_playoffs_yr"
 pageranks_play = pd.read_sql_query(query_play, con)
 
+query_team_records = "SELECT * FROM records_yr"
+team_records = pd.read_sql_query(query_team_records, con)
+
 team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
 
@@ -69,6 +72,12 @@ app.layout = html.Div([
                     )
                 ]
             ),
+            html.Div(
+                id='team-record',
+                style={'fontFamily':'sans-serif',
+                       'fontWeight':'bold'
+                       }
+                ),
             html.Img(
                 id='team-logo',
                 src='',
@@ -204,6 +213,20 @@ def show_correct_logo(selected_team):
 
     return src
 
+#dynamically change which record to display
+@app.callback(
+    Output('team-record','children'),
+    Input('team-dropdown','value'),
+    Input('season-slider','value')
+)
+def update_record(selected_team, selected_season):
+    season = seasons[selected_season]
+    teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
+    sel_team_rec = team_records.loc[(team_records['team_id']==teamid)&(team_records['season']==season),['record','seed']]
+
+    display = f'Record: {sel_team_rec['record'].values} \n Seed: {sel_team_rec['seed'].values}'
+    
+    return display
 
 if __name__ == "__main__":
     app.run(debug=True)
