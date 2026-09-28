@@ -75,7 +75,8 @@ app.layout = html.Div([
             html.Div(
                 id='team-record',
                 style={'fontFamily':'sans-serif',
-                       'fontWeight':'bold'
+                       'fontWeight':'bold',
+                       'textAlign': 'right'
                        }
                 ),
             html.Img(
@@ -220,14 +221,22 @@ def show_correct_logo(selected_team):
     Input('season-slider','value')
 )
 def update_record(selected_team, selected_season):
+    if selected_team == 'All' or selected_season >= len(seasons):
+        return None
+
     season = seasons[selected_season]
-    teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
-    print(team_records.loc[(team_records['team_id']==teamid),['record','seed']])
-    sel_team_rec = team_records.loc[(team_records['team_id']==teamid)&(team_records['season']==season),['record','seed']]
+    teamid = team_df[team_df['full_name'] == selected_team]['id'].to_numpy()
 
-    display = f'Record: {sel_team_rec['record'].values} \n Seed: {sel_team_rec['seed'].values}'
-    
-    return display
+    row = team_records.loc[
+        (team_records['team_id'] == teamid[0]) & (team_records['season'] == season),
+        ['record', 'seed']
+    ]
+    if row.empty:
+        return None
 
+    return [
+        html.Div(f"Record: {row['record'].iloc[0]}"),
+        html.Div(f"Seed: {row['seed'].iloc[0]}"),
+    ]
 if __name__ == "__main__":
     app.run(debug=True)
