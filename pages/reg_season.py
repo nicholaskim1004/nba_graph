@@ -29,6 +29,22 @@ seasons = pageranks_yr['season'].unique()
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
+CARD = {
+    'flex': '1',
+    'minWidth': '0',
+    'padding': '16px 20px',
+    'border': '1px solid #E0E0E0',
+    'borderRadius': '10px',
+    'backgroundColor': 'white',
+}
+H2_STYLE = {'fontFamily': 'sans-serif', 'fontWeight': 'bold', 'marginTop': '0'}
+
+# light row tints by conference; "contains" is case-insensitive, so "East"/"Eastern" both match
+CONF_STYLES = [
+    {'if': {'filter_query': '{conference} contains "east"'}, 'backgroundColor': '#E8F1FB'},
+    {'if': {'filter_query': '{conference} contains "west"'}, 'backgroundColor': '#FDECEC'},
+]
+
 dash.register_page(__name__, path='/reg-season', name='Regular Season', order = 0)
 
 layout = html.Div([
@@ -123,37 +139,62 @@ layout = html.Div([
     style={'display': 'none'}  # hidden until something is selected
     ),
     html.Div(
-        id='player_usage_container',
-        style={'display': 'flex',
-               'flexDirection': 'row',},
-        children=[
-            html.H2('Player Usage',style={"fontFamily": 'sans-serif',"fontWeight": 'bold', 'display':'flex'}),
-            html.Div(
-                        "A single metric to measure how centeralized the offense is to a select few players. "
-                        "Will hopefully highlight teams that are star focused over team first basketball. "
-                        "Gini coeffiencent is a measure of inequality. Smaller means more EQUAL. "
-                        "Entropy is a measure of how unpredictable a teams offensive involement is. Higher means MORE unpredictable or in this case more DIVERSE. "
-                        "Effective number of players is determing how many players have a meaningul pagerank or involement. Here the higher means more DIVERSE.",
-                        style={
-                            "fontFamily": 'sans-serif',
-                            "fontSize": "20px",
-                            "marginTop": "0px",
-                            'display': 'flex'
-                        }
-                    ),
+    style={'display': 'flex', 'flexDirection': 'row', 'gap': '24px',
+           'alignItems': 'flex-start', 'width': '100%', 'marginTop': '24px'},
+    children=[
+        # LEFT: player usage
+        html.Div(style=CARD, children=[
+            html.H2('Player Usage', style=H2_STYLE),
             dash_table.DataTable(
                 id='player_usage_table',
                 data=[],
-                columns=[{'name': i, 'id': i}
-                        for i in ['season','gini','entropy','eff_num_players']]
+                columns=[{'name': i, 'id': i} for i in ['season', 'gini', 'entropy', 'eff_num_players']],
+                style_cell={'fontFamily': 'sans-serif', 'textAlign': 'center'},
+                style_header={'fontWeight': 'bold'},
             ),
-            html.H2('League Standings',style={"fontFamily": 'sans-serif',"fontWeight": 'bold', 'display':'flex'}),
+            html.Details(
+                style={'fontFamily': 'sans-serif', 'marginTop': '16px'},
+                children=[
+                    html.Summary("What do these metrics mean?", style={'cursor': 'pointer', 'fontWeight': 'bold'}),
+                    html.Ul([
+                        html.Li("Gini: a measure of inequality. Smaller means more equal."),
+                        html.Li("Entropy: how unpredictable a team's offensive involvement is. Higher means more diverse."),
+                        html.Li("Effective # of players: how many players have a meaningful PageRank. Higher means more diverse."),
+                    ]),
+                ],
+            ),
+        ]),
+
+        # RIGHT: league standings
+        html.Div(style=CARD, children=[
+            html.H2('League Standings', style=H2_STYLE),
+            html.Div(
+                style={'fontFamily': 'sans-serif', 'fontSize': '13px', 'marginBottom': '8px'},
+                children=[
+                    html.Span('■ East', style={'color': '#4A90D9', 'marginRight': '12px'}),
+                    html.Span('■ West', style={'color': '#E05A5A'}),
+                ],
+            ),
             dash_table.DataTable(
                 id='league-standings-table',
-                columns=[{'name': i, 'id': i}
-                        for i in ['league_rank','conference','team','record']]
-            )
-        ]
+                data=[],
+                columns=[
+                    {'name': '#', 'id': 'league_rank'},
+                    {'name': 'Team', 'id': 'team', 'presentation': 'markdown'},
+                    {'name': 'Conf', 'id': 'conference'},
+                    {'name': 'Record', 'id': 'record'},
+                ],
+                style_cell={'fontFamily': 'sans-serif', 'textAlign': 'left', 'padding': '6px 10px'},
+                style_header={'fontWeight': 'bold'},
+                style_table={'maxHeight': '520px', 'overflowY': 'auto'},
+                fixed_rows={'headers': True},
+                style_data_conditional=CONF_STYLES,
+                css=[{'selector': '.dash-cell-value img',
+                      'rule': 'height: 22px; width: 22px; object-fit: contain; '
+                              'vertical-align: middle; margin-right: 8px;'}],
+            ),
+        ]),
+    ]
     )
 ])
 
@@ -341,13 +382,31 @@ def get_player_usage_dat(selected_team, selected_season):
 
 #to display the league standings dynamically
 @callback(
-    Output('league-standings-table','data'),
-    Input('season-slider','value')
+    Output('league-standings-table', 'data'),
+    Output('league-standings-table', 'style_data_conditional'),
+    Input('season-slider', 'value'),
+    Input('team-dropdown', 'value'),
 )
-def update_league_standings(selected_season):
+def update_league_standings(selected_season, selected_team):
     season = seasons[selected_season]
-    
-    seas_ranking = team_records.loc[team_records['season']==season,['league_rank','conference','team_name','record']]
-    seas_ranking = seas_ranking.rename(columns={'team_name':'team'})
-    
-    return seas_ranking.sort_values('league_rank').to_dict('records')
+
+    standings = team_records.loc[
+        team_records['season'] == season,
+        ['league_rank', 'conference', 'team_name', 'record']
+    ].sort_values('league_rank').copy()
+
+    # ![](logo) Team Name  -> rendered as an image + text via markdown
+    standings['team'] = standings['team_name'].apply(
+        lambda t: f"![](/assets/logos/{t.split()[-1].lower()}.png) {t}"
+    )
+
+    highlight = {
+        'if': {'filter_query': f'{{team}} contains "{selected_team.split()[-1]}"'},
+        'backgroundColor': '#FFF3C4',
+        'fontWeight': 'bold',
+    }
+
+    return (
+        standings[['league_rank', 'conference', 'team', 'record']].to_dict('records'),
+        CONF_STYLES + [highlight],
+    )
