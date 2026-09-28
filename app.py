@@ -30,7 +30,12 @@ app.layout = html.Div([
     html.Div(
         style = {'display': 'flex', 'flexDirection': 'row'},
         children=[
-            html.Img(src='/assets/logos/nba_logo.png', style={'width': '5%', 'height': 'auto'}),
+            html.Div(style={'justifyContent': 'center','alignItems': 'center','display':'flex'},
+                     children=[
+                         html.Img(src='/assets/logos/nba_logo.png', 
+                                  style={'width': '65%', 'height': 'auto'})
+                         ],
+            ),
 
             html.H1("NBA GRAPH NETWORKS",
                     style={
@@ -61,24 +66,32 @@ app.layout = html.Div([
                 }
             ),
             html.Div(
-                style={'gridArea': 'dropdown'},
+                style={
+                    'gridArea': 'dropdown',
+                    'display': 'flex',
+                    'flexDirection': 'row',
+                    'alignItems': 'flex-end',
+                    'gap': '24px'
+                },
                 children=[
-                    html.Label('Team', style={"fontFamily": 'sans-serif', 'font-weight': 'bold'}),
-                    dcc.Dropdown(
-                        id='team-dropdown',
-                        options=sorted(team_list, reverse=False),
-                        value=team_list[0],
-                        style={"fontFamily": 'sans-serif', 'width': '60%'}
-                    )
+                    html.Div(
+                        style={'width': '950px'},
+                        children=[
+                            html.Label('Team', style={"fontFamily": 'sans-serif', 'fontWeight': 'bold'}),
+                            dcc.Dropdown(
+                                id='team-dropdown',
+                                options=sorted(team_list, reverse=False),
+                                value=team_list[0],
+                                style={"fontFamily": 'sans-serif', 'width': '30%'}
+                            )
+                        ]
+                    ),
+                html.Div(
+                    id='team-record',
+                    style={'fontFamily': 'sans-serif', 'fontWeight': 'bold', 'fontSize': '20px'}
+                )
                 ]
             ),
-            html.Div(
-                id='team-record',
-                style={'fontFamily':'sans-serif',
-                       'fontWeight':'bold',
-                       'textAlign': 'right'
-                       }
-                ),
             html.Img(
                 id='team-logo',
                 src='',
