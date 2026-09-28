@@ -42,7 +42,9 @@ years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
 
 team_df = pd.DataFrame(teams.get_teams())
 
+print('starting data pull')
 for yr in years:
+    print(f'pulling for {yr} season')
     standings = LeagueStandings(league_id='00',season=yr).get_data_frames()[0]
 
     standings['season'] = yr
@@ -54,8 +56,9 @@ for yr in years:
                                         'Division':'division',
                                         'Record':'record',
                                         'PlayoffRank':'seed'})
-    
-    standings.to_sql('records_yr', con, if_exists='append', chunksize=standings.shape[0])
+    print('saving..')
+    standings.to_sql('records_yr', con, if_exists='append', index=False, method='multi', chunksize=standings.shape[0])
 
+print('finished')
 cursor.close()
 con.close()
