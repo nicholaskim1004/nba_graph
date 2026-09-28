@@ -55,7 +55,7 @@ for yr in years:
                                         'Record':'record',
                                         'PlayoffRank':'seed'})
     
-    standings.to_sql('record_yr', con, if_exists='append', chunksize=standings.shape[0])
+    standings.to_sql('records_yr', con, if_exists='append', chunksize=standings.shape[0])
 
 cursor.close()
 con.close()

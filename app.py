@@ -222,6 +222,7 @@ def show_correct_logo(selected_team):
 def update_record(selected_team, selected_season):
     season = seasons[selected_season]
     teamid = team_df[team_df['full_name']==selected_team]['id'].to_numpy()
+    print(team_records.loc[(team_records['team_id']==teamid),['record','seed']])
     sel_team_rec = team_records.loc[(team_records['team_id']==teamid)&(team_records['season']==season),['record','seed']]
 
     display = f'Record: {sel_team_rec['record'].values} \n Seed: {sel_team_rec['seed'].values}'
