@@ -9,7 +9,7 @@ cursor = con.cursor()
 
 cursor.execute("DROP TABLE IF EXISTS records_yr")
 
-##initalize shots table
+##initalize records table
 cursor.execute("""
                CREATE TABLE IF NOT EXISTS records_yr
                (
@@ -22,6 +22,21 @@ cursor.execute("""
                    seed INTEGER
                )
                """)
+
+cursor.execute("""
+               CREATE TABLE IF NOT EXISTS playoff_records_yr
+               (
+                   season TEXT,
+                   conference TEXT,
+                   round TEXT,
+                   series TEXT,
+                   winning_team TEXT,
+                   losing_team TEXT
+               )
+               """)
+
+play_rec = pd.read_csv('data/playoff__bracket_yr.csv',header=True)
+play_rec.to_sql('playoff_records_yr', con, if_exists='replace')
 
 years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
 
