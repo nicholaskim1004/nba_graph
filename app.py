@@ -242,14 +242,23 @@ def update_record(selected_team, selected_season):
 
     row = team_records.loc[
         (team_records['team_id'] == teamid[0]) & (team_records['season'] == season),
-        ['record', 'seed']
+        ['record', 'seed', 'conference']
     ]
     if row.empty:
         return None
 
+    if row['seed'].iloc[0] == 1:
+        seed_display = html.Div(f"Seed: {row['seed'].iloc[0]}st in {row['conference'].iloc[0]}")
+    elif row['seed'].iloc[0] == 2:
+        seed_display = html.Div(f"Seed: {row['seed'].iloc[0]}nd in {row['conference'].iloc[0]}")
+    elif row['seed'].iloc[0] == 3:
+        seed_display = html.Div(f"Seed: {row['seed'].iloc[0]}rd in {row['conference'].iloc[0]}")
+    else:
+        seed_display = html.Div(f"Seed: {row['seed'].iloc[0]}th in {row['conference'].iloc[0]}")
+
     return [
         html.Div(f"Record: {row['record'].iloc[0]}"),
-        html.Div(f"Seed: {row['seed'].iloc[0]}"),
+        seed_display
     ]
 if __name__ == "__main__":
     app.run(debug=True)

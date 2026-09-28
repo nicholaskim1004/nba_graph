@@ -19,6 +19,7 @@ cursor.execute("""
                    conference TEXT,
                    division TEXT,
                    record STRING,
+                   wins INTGER,
                    seed INTEGER
                )
                """)
@@ -56,6 +57,12 @@ for yr in years:
                                         'Division':'division',
                                         'Record':'record',
                                         'PlayoffRank':'seed'})
+    
+    split = standings['record'].str.split('-', expand=True)
+    wins = split[0].astype(int).to_numpy()
+    
+    standings['wins'] = wins
+    
     print('saving..')
     standings.to_sql('records_yr', con, if_exists='append', index=False, method='multi', chunksize=standings.shape[0])
 
