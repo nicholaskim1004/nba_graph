@@ -32,6 +32,8 @@ player_usage_play = pd.read_sql_query(query_player_play, con)
 query_playoff_res = "SELECT * FROM playoff_records_yr"
 playoff_res = pd.read_sql_query(query_playoff_res, con)
 
+playoff_res['win_team_short'] = playoff_res['winning_team'].str.split(" ")
+
 query_team_records = "SELECT * FROM records_yr"
 team_records = pd.read_sql_query(query_team_records, con)
 
@@ -460,22 +462,110 @@ def update_reg_v_play_fig(selected_team, selected_season):
     return fig
 
 #dynamically display playoff bracket
-callback(
-    Output('playoff-bracket','figure'),
-    Input('season-slider','value')
+BRACKET_SEED_ORDER = [1, 8, 4, 5, 3, 6, 2, 7]  # standard 8-team bracket order, top to bottom
+ROUND_ORDER = ['first_round', 'conf_semi_final', 'conf_final']
+
+def build_conference_bracket(df_season, conference):
+    prev_positions = {}  # team_name -> y from the previous round
+    nodes, lines = [], []
+
+    conf_rounds = [r for r in ROUND_ORDER if r in df_season['round'].unique()]
+
+    for x, rnd in enumerate(conf_rounds):
+        games = df_season[(df_season['round'] == rnd) & (df_season['conference'] == conference)].copy()
+
+        if rnd == 'first_round':
+            games['_slot'] = games.apply(
+                lambda row: BRACKET_SEED_ORDER.index(min(row['seed_win'], row['seed_lose'])) // 2,
+                axis=1
+            )
+            games = games.sort_values('_slot')
+            ys = list(range(len(games) - 1, -1, -1))
+        else:
+            ys = [
+                (prev_positions[row['winning_team']] + prev_positions[row['losing_team']]) / 2
+                for _, row in games.iterrows()
+            ]
+
+        new_positions = {}
+        for (_, row), y in zip(games.iterrows(), ys):
+            nodes.append({
+                'round': rnd, 'x': x, 'y': y,
+                'winning_team': row['winning_team'], 'seed_win': row['seed_win'],
+                'losing_team': row['losing_team'], 'seed_lose': row['seed_lose'],
+                'series': row['series']
+            })
+            new_positions[row['winning_team']] = y
+            new_positions[row['losing_team']] = y
+
+            if x > 0:
+                for team in (row['winning_team'], row['losing_team']):
+                    lines.append(((x - 1, prev_positions[team]), (x, y)))
+
+        prev_positions = new_positions
+
+    return nodes, lines
+
+
+def make_bracket_figure(season):
+    df_season = playoff_res[playoff_res['season'] == season]
+    west_nodes, west_lines = build_conference_bracket(df_season, 'west')
+    east_nodes, east_lines = build_conference_bracket(df_season, 'east')
+
+    fig = go.Figure()
+    max_x = max((n['x'] for n in west_nodes + east_nodes), default=0)
+
+    def plot_side(nodes, lines, flip):
+        for (x0, y0), (x1, y1) in lines:
+            px0 = (max_x - x0) if flip else x0
+            px1 = (max_x - x1) if flip else x1
+            fig.add_trace(go.Scatter(
+                x=[px0, px1], y=[y0, y1], mode='lines',
+                line=dict(color='lightgray', width=2),
+                hoverinfo='skip', showlegend=False
+            ))
+        for n in nodes:
+            px = (max_x - n['x']) if flip else n['x']
+            fig.add_trace(go.Scatter(
+                x=[px], y=[n['y']], mode='markers+text',
+                text=[f"{n['winning_team']} ({n['seed_win']})"],
+                textposition='middle left' if flip else 'middle right',
+                marker=dict(size=10, color='#172B3C'),
+                hovertext=[f"{n['winning_team']} ({n['seed_win']}) def. {n['losing_team']} ({n['seed_lose']}) {n['series']}"],
+                hoverinfo='text', showlegend=False
+            ))
+
+    plot_side(west_nodes, west_lines, flip=False)
+    plot_side(east_nodes, east_lines, flip=True)
+
+    finals_row = playoff_res[(playoff_res['season'] == season) & (playoff_res['round'] == 'finals')]
+    if not finals_row.empty:
+        row = finals_row.iloc[0]
+        west_y = next((n['y'] for n in west_nodes if n['round'] == 'conf_final'), None)
+        east_y = next((n['y'] for n in east_nodes if n['round'] == 'conf_final'), None)
+        if west_y is not None and east_y is not None:
+            fig.add_trace(go.Scatter(
+                x=[max_x], y=[(west_y + east_y) / 2], mode='markers+text',
+                text=[f"🏆 {row['winning_team']} ({row['seed_win']})"],
+                textposition='top center',
+                marker=dict(size=16, color='gold', symbol='star'),
+                hovertext=[f"Champion: {row['winning_team']} def. {row['losing_team']} {row['series']}"],
+                hoverinfo='text', showlegend=False
+            ))
+
+    fig.update_layout(
+        showlegend=False,
+        xaxis=dict(visible=False), yaxis=dict(visible=False),
+        plot_bgcolor='white', height=500,
+        margin=dict(l=20, r=20, t=30, b=20)
+    )
+    return fig
+
+
+@callback(
+    Output('playoff-bracket', 'figure'),
+    Input('season-slider', 'value')
 )
 def update_playoff_bracket(selected_season):
-    #need to use plotly graph objects 
-    #build seperate helped function for this
     season = seasons[selected_season]
-    
-    #stores team associated with what seed
-    records_yr = team_records[team_records['season']==season]
-    
-    #stores winning team and series result
-    playoff_res_yr = playoff_res[playoff_res['season']==season]
-    team_nodes = [
-        #WEST side
-        (0, 8, f'1) {records_yr.loc[(records_yr['seed']==1)&(records_yr['conference']=='West'),'team_name']}')
-    ]
-    return
+    return make_bracket_figure(season)
