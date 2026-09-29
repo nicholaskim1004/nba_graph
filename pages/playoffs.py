@@ -2,11 +2,13 @@ import sqlite3
 import pandas as pd # type: ignore[import-not-found]
 import dash_cytoscape as cyto  # type: ignore[import-not-found]
 import numpy as np # type: ignore[import-not-found]
+import plotly.graph_objects as go
+import plotly.express as px
 
 import dash # type: ignore[import-not-found]
 from dash import html, Input, Output, callback, dash_table, State, dcc, ctx, no_update# type: ignore[import-not-found]
-import plotly.express as px
 from nba_api.stats.static import teams
+
 
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
@@ -26,6 +28,12 @@ player_usage = pd.read_sql_query(query_player, con)
 
 query_player_play = "SELECT * FROM player_usage_yr_playoff"
 player_usage_play = pd.read_sql_query(query_player_play, con)
+
+query_playoff_res = "SELECT * FROM playoff_records_yr"
+playoff_res = pd.read_sql_query(query_playoff_res, con)
+
+query_team_records = "SELECT * FROM records_yr"
+team_records = pd.read_sql_query(query_team_records, con)
 
 team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
@@ -170,6 +178,13 @@ layout = html.Div([
                 }
             ),
             dcc.Graph(id='reg_v_play_heatmap',
+                      figure={})
+        ]
+    ),
+    html.Div(
+        children=[
+            html.H2('Playoff Bracket',style={"fontFamily": 'sans-serif',"fontWeight": 'bold'}),
+            dcc.Graph(id='playoff-bracket',
                       figure={})
         ]
     )
@@ -443,3 +458,24 @@ def update_reg_v_play_fig(selected_team, selected_season):
             layer='above'
         )
     return fig
+
+#dynamically display playoff bracket
+callback(
+    Output('playoff-bracket','figure'),
+    Input('season-slider','value')
+)
+def update_playoff_bracket(selected_season):
+    #need to use plotly graph objects 
+    #build seperate helped function for this
+    season = seasons[selected_season]
+    
+    #stores team associated with what seed
+    records_yr = team_records[team_records['season']==season]
+    
+    #stores winning team and series result
+    playoff_res_yr = playoff_res[playoff_res['season']==season]
+    team_nodes = [
+        #WEST side
+        (0, 8, f'1) {records_yr.loc[(records_yr['seed']==1)&(records_yr['conference']=='West'),'team_name']}')
+    ]
+    return

@@ -38,7 +38,7 @@ cursor.execute("""
                """)
 
 play_rec = pd.read_csv('data/playoff__bracket_yr.csv')
-play_rec.to_sql('playoff_records_yr', con, if_exists='replace')
+play_rec.to_sql('playoff_records_yr', con, if_exists='replace', index=False)
 
 years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
 
