@@ -148,7 +148,7 @@ def update_yoy_heatmap(selected_team, selected_season, selected_player_id):
 
     # Step 1: who is/was on this team's roster (within the season window)?
     roster_ids = pageranks.loc[
-        (pageranks['season_idx'] <= selected_season) &
+        (pageranks['season_idx'] == selected_season) &
         (pageranks['team_id'] == teamid[0]),
         'player_id'
     ].unique()

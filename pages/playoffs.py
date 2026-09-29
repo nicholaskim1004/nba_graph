@@ -44,6 +44,198 @@ seasons = pageranks_yr['season'].unique()
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
+#for playoff bracket
+BOX_W, ROW_H = 360, 34
+BOX_H = ROW_H * 2
+COL_GAP = 90
+ROW_GAP = 24
+CENTER_GAP = BOX_W + COL_GAP * 2  # reserved space in the middle for the Finals box
+LOGO_SIZE = 200  # change this once, offsets below stay correct automatically
+
+
+ROUND_ORDER = ['first_round', 'conf_semi_final', 'conf_final']
+
+
+def team_logo(team_name):
+    return f"/assets/logos/{team_name.split()[-1].lower()}.png"
+
+
+def build_conference_bracket(df_season, conference):
+    seed_order = [1, 8, 4, 5, 3, 6, 2, 7]
+    prev_center = {}
+    rounds_out = []
+
+    conf_rounds = [r for r in ROUND_ORDER if r in df_season['round'].unique()]
+
+    for rnd_idx, rnd in enumerate(conf_rounds):
+        games = df_season[(df_season['round'] == rnd) & (df_season['conference'] == conference)].copy()
+
+        if rnd_idx == 0:
+            games['_slot'] = games.apply(
+                lambda r: seed_order.index(min(r['seed_win'], r['seed_lose'])) // 2, axis=1
+            )
+            games = games.sort_values('_slot').reset_index(drop=True)
+            centers = [i * (BOX_H + ROW_GAP) for i in range(len(games))]
+        else:
+            centers = [
+                (prev_center[r['winning_team']] + prev_center[r['losing_team']]) / 2
+                for _, r in games.iterrows()
+            ]
+
+        round_games = []
+        for (_, r), y in zip(games.iterrows(), centers):
+            round_games.append({
+                'y': y, 'winning_team': r['winning_team'], 'seed_win': r['seed_win'],
+                'losing_team': r['losing_team'], 'seed_lose': r['seed_lose'], 'series': r['series']
+            })
+            prev_center[r['winning_team']] = y
+            prev_center[r['losing_team']] = y
+
+        rounds_out.append(round_games)
+
+    return rounds_out
+
+
+def draw_box(fig, x, y_center, winning_team, seed_win, losing_team, seed_lose, series):
+    y0, y1 = y_center - BOX_H / 2, y_center + BOX_H / 2
+
+    fig.add_shape(type='rect', x0=x, x1=x + BOX_W, y0=y0, y1=y1,
+                  line=dict(color='#D0D0D0', width=1.5), fillcolor='white')
+    fig.add_shape(type='line', x0=x, x1=x + BOX_W, y0=y_center, y1=y_center,
+                  line=dict(color='#E8E8E8', width=1))
+    
+        # always tint the winner's row
+    fig.add_shape(type='rect', x0=x, x1=x + BOX_W, y0=y0, y1=y0 + ROW_H,
+                  line=dict(width=0), fillcolor='#C9EBFF')
+
+    fig.add_layout_image(dict(source=team_logo(winning_team), x=x + 6, y=y0 + ROW_H / 2,
+                               xref='x', yref='y', sizex=22, sizey=22, xanchor='left', yanchor='middle'))
+    fig.add_annotation(x=x + 32, y=y0 + ROW_H / 2, xref='x', yref='y',
+                        text=f"{winning_team} ({seed_win})", showarrow=False,
+                        font=dict(size=12, color='#172B3C', family='sans-serif'), xanchor='left')
+
+    fig.add_layout_image(dict(source=team_logo(losing_team), x=x + 6, y=y0 + ROW_H + ROW_H / 2,
+                               xref='x', yref='y', sizex=22, sizey=22, xanchor='left', yanchor='middle'))
+    fig.add_annotation(x=x + 32, y=y0 + ROW_H + ROW_H / 2, xref='x', yref='y',
+                        text=f"{losing_team} ({seed_lose})", showarrow=False,
+                        font=dict(size=12, color='#AAAAAA', family='sans-serif'), xanchor='left')
+
+    fig.add_trace(go.Scatter(
+        x=[x + BOX_W / 2], y=[y_center], mode='markers', marker=dict(opacity=0), showlegend=False,
+        hovertext=[f"{series}: {winning_team} def. {losing_team}"], hoverinfo='text'
+    ))
+
+
+def draw_conference(fig, rounds_data, x_for_col, total_cols, finals_x=None, finals_y=None):
+    for col, games in enumerate(rounds_data):
+        x = x_for_col(col)
+        for g in games:
+            draw_box(fig, x, g['y'], g['winning_team'], g['seed_win'], g['losing_team'], g['seed_lose'], g['series'])
+
+        if col < total_cols - 1:
+            next_x = x_for_col(col + 1)
+            from_edge = x + BOX_W if next_x > x else x
+            to_edge = next_x if next_x > x else next_x + BOX_W
+            mid_x = (from_edge + to_edge) / 2
+
+            next_games = rounds_data[col + 1]
+            for g in games:
+                target = next((ng for ng in next_games
+                               if g['winning_team'] in (ng['winning_team'], ng['losing_team'])), None)
+                if not target:
+                    continue
+                fig.add_shape(type='line', x0=from_edge, x1=mid_x, y0=g['y'], y1=g['y'], line=dict(color='#D0D0D0', width=1.5))
+                fig.add_shape(type='line', x0=mid_x, x1=mid_x, y0=g['y'], y1=target['y'], line=dict(color='#D0D0D0', width=1.5))
+                fig.add_shape(type='line', x0=mid_x, x1=to_edge, y0=target['y'], y1=target['y'], line=dict(color='#D0D0D0', width=1.5))
+
+    # connector from each conference's last round into the finals box
+    if finals_x is not None and rounds_data and rounds_data[-1]:
+        last_x = x_for_col(total_cols - 1)
+        for g in rounds_data[-1]:
+            from_edge = last_x + BOX_W if finals_x > last_x else last_x
+            to_edge = finals_x if finals_x > last_x else finals_x + BOX_W
+            mid_x = (from_edge + to_edge) / 2
+            fig.add_shape(type='line', x0=from_edge, x1=mid_x, y0=g['y'], y1=g['y'], line=dict(color='#D0D0D0', width=1.5))
+            fig.add_shape(type='line', x0=mid_x, x1=mid_x, y0=g['y'], y1=finals_y, line=dict(color='#D0D0D0', width=1.5))
+            fig.add_shape(type='line', x0=mid_x, x1=to_edge, y0=finals_y, y1=finals_y, line=dict(color='#D0D0D0', width=1.5))
+
+
+def make_bracket_figure(season):
+    df_season = playoff_res[playoff_res['season'] == season]
+    west = build_conference_bracket(df_season, 'west')
+    east = build_conference_bracket(df_season, 'east')
+    total_cols = max(len(west), len(east))
+
+    west_last_x = (total_cols - 1) * (BOX_W + COL_GAP)
+    east_start_x = west_last_x + BOX_W + CENTER_GAP
+
+    def west_x(col):
+        return col * (BOX_W + COL_GAP)
+
+    def east_x(col):
+        return east_start_x + (total_cols - 1 - col) * (BOX_W + COL_GAP)
+
+    finals_x = west_last_x + BOX_W + COL_GAP
+    west_final_y = west[-1][0]['y'] if west and west[-1] else 0
+    east_final_y = east[-1][0]['y'] if east and east[-1] else 0
+    finals_y = (west_final_y + east_final_y) / 2
+
+    fig = go.Figure()
+    draw_conference(fig, west, west_x, total_cols, finals_x=finals_x, finals_y=finals_y)
+    draw_conference(fig, east, east_x, total_cols, finals_x=finals_x, finals_y=finals_y)
+
+    if west:
+        fig.add_annotation(x=west_x(0) + BOX_W / 2, y=-70, text='<b>WESTERN CONFERENCE<b>', showarrow=False,
+                            font=dict(size=16, family='sans-serif', color='#172B3C'))
+    if east:
+        fig.add_annotation(x=east_x(0) + BOX_W / 2, y=-70, text='<b>EASTERN CONFERENCE<b>', showarrow=False,
+                            font=dict(size=16, family='sans-serif', color='#172B3C'))
+
+    finals_row = playoff_res[(playoff_res['season'] == season) & (playoff_res['round'] == 'finals')]
+    finals_bottom = 0  # how far down the finals content extends, used to size the y-axis below
+
+    if not finals_row.empty:
+        row = finals_row.iloc[0]
+        logo_top = finals_y + BOX_H / 2 + 25
+
+        draw_box(fig, finals_x, finals_y, row['winning_team'], row['seed_win'],
+                 row['losing_team'], row['seed_lose'], row['series'])
+
+        fig.add_layout_image(dict(
+            source=team_logo(row['winning_team']),
+            x=finals_x + BOX_W / 2 - LOGO_SIZE / 2,
+            y=logo_top,
+            xref='x', yref='y',
+            sizex=LOGO_SIZE, sizey=LOGO_SIZE
+        ))
+
+        text_y = logo_top + LOGO_SIZE/2 + 50
+        fig.add_annotation(
+            x=finals_x + BOX_W / 2,
+            y=text_y,
+            text=f"🏆 {row['winning_team']}", showarrow=False,
+            font=dict(size=18, color='#B8860B', family='sans-serif')
+        )
+
+        finals_bottom = 5   # a little padding below the text itself
+
+    all_games = [g for r in west + east for g in r]
+    max_y = max(
+        max((g['y'] for g in all_games), default=BOX_H) + BOX_H,
+        finals_bottom
+    )
+    max_x = east_x(0) + BOX_W
+
+    fig.update_layout(
+        xaxis=dict(visible=False, range=[-20, max_x + 20]),
+        yaxis=dict(visible=False, range=[max_y + 40, -110]),
+        plot_bgcolor='white', height=max(500, max_y + 150),
+        margin=dict(l=10, r=10, t=20, b=10), showlegend=False
+    )
+    return fig
+
+#playoff page layout
+
 dash.register_page(__name__, path='/playoffs', name='Playoffs', order = 1)
 
 layout = html.Div([
@@ -462,178 +654,6 @@ def update_reg_v_play_fig(selected_team, selected_season):
     return fig
 
 #dynamically display playoff bracket
-BOX_W, ROW_H = 360, 34
-BOX_H = ROW_H * 2
-COL_GAP = 90
-ROW_GAP = 24
-CENTER_GAP = BOX_W + COL_GAP * 2  # reserved space in the middle for the Finals box
-LOGO_SIZE = 200  # change this once, offsets below stay correct automatically
-
-
-ROUND_ORDER = ['first_round', 'conf_semi_final', 'conf_final']
-
-
-def team_logo(team_name):
-    return f"/assets/logos/{team_name.split()[-1].lower()}.png"
-
-
-def build_conference_bracket(df_season, conference):
-    seed_order = [1, 8, 4, 5, 3, 6, 2, 7]
-    prev_center = {}
-    rounds_out = []
-
-    conf_rounds = [r for r in ROUND_ORDER if r in df_season['round'].unique()]
-
-    for rnd_idx, rnd in enumerate(conf_rounds):
-        games = df_season[(df_season['round'] == rnd) & (df_season['conference'] == conference)].copy()
-
-        if rnd_idx == 0:
-            games['_slot'] = games.apply(
-                lambda r: seed_order.index(min(r['seed_win'], r['seed_lose'])) // 2, axis=1
-            )
-            games = games.sort_values('_slot').reset_index(drop=True)
-            centers = [i * (BOX_H + ROW_GAP) for i in range(len(games))]
-        else:
-            centers = [
-                (prev_center[r['winning_team']] + prev_center[r['losing_team']]) / 2
-                for _, r in games.iterrows()
-            ]
-
-        round_games = []
-        for (_, r), y in zip(games.iterrows(), centers):
-            round_games.append({
-                'y': y, 'winning_team': r['winning_team'], 'seed_win': r['seed_win'],
-                'losing_team': r['losing_team'], 'seed_lose': r['seed_lose'], 'series': r['series']
-            })
-            prev_center[r['winning_team']] = y
-            prev_center[r['losing_team']] = y
-
-        rounds_out.append(round_games)
-
-    return rounds_out
-
-
-def draw_box(fig, x, y_center, winning_team, seed_win, losing_team, seed_lose, series):
-    y0, y1 = y_center - BOX_H / 2, y_center + BOX_H / 2
-
-    fig.add_shape(type='rect', x0=x, x1=x + BOX_W, y0=y0, y1=y1,
-                  line=dict(color='#D0D0D0', width=1.5), fillcolor='white')
-    fig.add_shape(type='line', x0=x, x1=x + BOX_W, y0=y_center, y1=y_center,
-                  line=dict(color='#E8E8E8', width=1))
-
-    fig.add_layout_image(dict(source=team_logo(winning_team), x=x + 6, y=y0 + ROW_H / 2,
-                               xref='x', yref='y', sizex=22, sizey=22, xanchor='left', yanchor='middle'))
-    fig.add_annotation(x=x + 32, y=y0 + ROW_H / 2, xref='x', yref='y',
-                        text=f"{winning_team} ({seed_win})", showarrow=False,
-                        font=dict(size=12, color='#172B3C', family='sans-serif'), xanchor='left')
-
-    fig.add_layout_image(dict(source=team_logo(losing_team), x=x + 6, y=y0 + ROW_H + ROW_H / 2,
-                               xref='x', yref='y', sizex=22, sizey=22, xanchor='left', yanchor='middle'))
-    fig.add_annotation(x=x + 32, y=y0 + ROW_H + ROW_H / 2, xref='x', yref='y',
-                        text=f"{losing_team} ({seed_lose})", showarrow=False,
-                        font=dict(size=12, color='#AAAAAA', family='sans-serif'), xanchor='left')
-
-    fig.add_trace(go.Scatter(
-        x=[x + BOX_W / 2], y=[y_center], mode='markers', marker=dict(opacity=0), showlegend=False,
-        hovertext=[f"{series}: {winning_team} def. {losing_team}"], hoverinfo='text'
-    ))
-
-
-def draw_conference(fig, rounds_data, x_for_col, total_cols, finals_x=None, finals_y=None):
-    for col, games in enumerate(rounds_data):
-        x = x_for_col(col)
-        for g in games:
-            draw_box(fig, x, g['y'], g['winning_team'], g['seed_win'], g['losing_team'], g['seed_lose'], g['series'])
-
-        if col < total_cols - 1:
-            next_x = x_for_col(col + 1)
-            from_edge = x + BOX_W if next_x > x else x
-            to_edge = next_x if next_x > x else next_x + BOX_W
-            mid_x = (from_edge + to_edge) / 2
-
-            next_games = rounds_data[col + 1]
-            for g in games:
-                target = next((ng for ng in next_games
-                               if g['winning_team'] in (ng['winning_team'], ng['losing_team'])), None)
-                if not target:
-                    continue
-                fig.add_shape(type='line', x0=from_edge, x1=mid_x, y0=g['y'], y1=g['y'], line=dict(color='#D0D0D0', width=1.5))
-                fig.add_shape(type='line', x0=mid_x, x1=mid_x, y0=g['y'], y1=target['y'], line=dict(color='#D0D0D0', width=1.5))
-                fig.add_shape(type='line', x0=mid_x, x1=to_edge, y0=target['y'], y1=target['y'], line=dict(color='#D0D0D0', width=1.5))
-
-    # connector from each conference's last round into the finals box
-    if finals_x is not None and rounds_data and rounds_data[-1]:
-        last_x = x_for_col(total_cols - 1)
-        for g in rounds_data[-1]:
-            from_edge = last_x + BOX_W if finals_x > last_x else last_x
-            to_edge = finals_x if finals_x > last_x else finals_x + BOX_W
-            mid_x = (from_edge + to_edge) / 2
-            fig.add_shape(type='line', x0=from_edge, x1=mid_x, y0=g['y'], y1=g['y'], line=dict(color='#D0D0D0', width=1.5))
-            fig.add_shape(type='line', x0=mid_x, x1=mid_x, y0=g['y'], y1=finals_y, line=dict(color='#D0D0D0', width=1.5))
-            fig.add_shape(type='line', x0=mid_x, x1=to_edge, y0=finals_y, y1=finals_y, line=dict(color='#D0D0D0', width=1.5))
-
-
-def make_bracket_figure(season):
-    df_season = playoff_res[playoff_res['season'] == season]
-    west = build_conference_bracket(df_season, 'west')
-    east = build_conference_bracket(df_season, 'east')
-    total_cols = max(len(west), len(east))
-
-    west_last_x = (total_cols - 1) * (BOX_W + COL_GAP)
-    east_start_x = west_last_x + BOX_W + CENTER_GAP  # east's LAST round lands just right of the center gap
-
-    def west_x(col):
-        return col * (BOX_W + COL_GAP)
-
-    def east_x(col):
-        return east_start_x + (total_cols - 1 - col) * (BOX_W + COL_GAP)
-
-    finals_x = west_last_x + BOX_W + COL_GAP
-    west_final_y = west[-1][0]['y'] if west and west[-1] else 0
-    east_final_y = east[-1][0]['y'] if east and east[-1] else 0
-    finals_y = (west_final_y + east_final_y) / 2
-
-    fig = go.Figure()
-    draw_conference(fig, west, west_x, total_cols, finals_x=finals_x, finals_y=finals_y)
-    draw_conference(fig, east, east_x, total_cols, finals_x=finals_x, finals_y=finals_y)
-
-    if west:
-        fig.add_annotation(x=west_x(0) + BOX_W / 2, y=-70, text='WESTERN CONFERENCE', showarrow=False,
-                            font=dict(size=16, family='sans-serif', color='#172B3C'))
-    if east:
-        fig.add_annotation(x=east_x(0) + BOX_W / 2, y=-70, text='EASTERN CONFERENCE', showarrow=False,
-                            font=dict(size=16, family='sans-serif', color='#172B3C'))
-
-    finals_row = playoff_res[(playoff_res['season'] == season) & (playoff_res['round'] == 'finals')]
-    if not finals_row.empty:
-        row = finals_row.iloc[0]
-        draw_box(fig, finals_x, finals_y, row['winning_team'], row['seed_win'],
-                 row['losing_team'], row['seed_lose'], row['series'])
-
-        fig.add_layout_image(dict(
-            source=team_logo(row['winning_team']),
-            x=finals_x + BOX_W / 2 - LOGO_SIZE / 2,
-            y=finals_y + BOX_H / 2 + 25,
-            xref='x', yref='y',
-            sizex=LOGO_SIZE, sizey=LOGO_SIZE
-        ))
-        fig.add_annotation(x=finals_x + BOX_W / 2, y=finals_y + BOX_H / 2 + 60,
-                            text=f"🏆 {row['winning_team']}", showarrow=False,
-                            font=dict(size=15, color='#B8860B', family='sans-serif'))
-
-    all_games = [g for r in west + east for g in r]
-    max_y = max((g['y'] for g in all_games), default=BOX_H) + BOX_H
-    max_x = east_x(0) + BOX_W
-
-    fig.update_layout(
-        xaxis=dict(visible=False, range=[-20, max_x + 20]),
-        yaxis=dict(visible=False, range=[max_y + 40, -110]),
-        plot_bgcolor='white', height=max(500, max_y + 150),
-        margin=dict(l=10, r=10, t=20, b=10), showlegend=False
-    )
-    return fig
-
-
 @callback(
     Output('playoff-bracket', 'figure'),
     Input('season-slider', 'value')

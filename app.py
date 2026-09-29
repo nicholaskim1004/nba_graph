@@ -261,4 +261,4 @@ def update_record(selected_team, selected_season):
         seed_display
     ]
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True)
