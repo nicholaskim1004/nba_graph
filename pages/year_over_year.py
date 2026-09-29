@@ -207,7 +207,7 @@ def update_yoy_heatmap(selected_team, selected_season, selected_player_id):
     )
     fig.update_layout(
         width=750,
-        height=max(400, 25 * pivot.shape[0]),
+        height=max(700, 25 * pivot.shape[0]),
         uirevision=selected_season
     )
 
