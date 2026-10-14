@@ -6,6 +6,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.neighbors import NearestNeighbors
 
+from nba_api.stats.static import players
+
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
 
@@ -62,8 +64,8 @@ preprocessor = ColumnTransformer(
 X = preprocessor.fit_transform(prof_df[features])
 nn = NearestNeighbors(n_neighbors=6, metric='euclidean').fit(X)
 
-def similar(player_name, season, n=5):
-    i = prof_df.index[(prof_df.player_name == player_name) & (prof_df.season == season)][0]
+def similar(player_id, season, n=5):
+    i = prof_df.index[(prof_df.player_id == player_id) & (prof_df.season == season)][0]
     pid = prof_df.at[i, 'player_id']
 
     # distance from the query row to every row
@@ -75,10 +77,10 @@ def similar(player_name, season, n=5):
     idx = np.argsort(dist)[:n]
     return prof_df.iloc[idx].assign(distance=dist[idx])
 
-print(prof_df[prof_df['player_id'] == 201942])
 
-print(prof_df['season'].unique())
+print(players.find_players_by_full_name('LeBron James'))
 
-similar_players = similar('DeMar DeRozan', '2020-21',30)
+print(prof_df[(prof_df['player_id'] == 2544)])
+similar_players = similar(2544, '2020-21',30)
 
 print(similar_players)
