@@ -11,6 +11,27 @@ from nba_api.stats.static import players
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
 
+cursor.execute("DROP TABLE IF EXISTS player_profiles")
+cursor.execute("""
+               CREATE TABLE IF NOT EXISTS player_profiles
+               (
+                    season TEXT,
+                    team_id INTEGER,
+                    player_id INTEGER,
+                    player_name TEXT,
+                    positions TEXT,
+                    pagerank_norm REAL,
+                    E_DEF_RATING REAL,
+                    AST_PCT REAL,
+                    USG REAL,
+                    paint_att REAL,
+                    mid_range_att REAL,
+                    left_corner_att REAL,
+                    right_corner_att REAL,
+                    above_break_att REAL
+               )
+               """)
+
 query_page = "SELECT * FROM pageranks_yr"
 pageranks = pd.read_sql_query(query_page, con)
 
@@ -46,10 +67,19 @@ page_norm = pageranks_players.groupby(['season','team_id']).apply(lambda x: x['p
 pageranks_players['pagerank_norm'] = page_norm.reset_index(level=[0,1], drop=True)
 
 prof_df = proportion_shots.merge(pageranks_players[['player_id', 'season','team_id','pagerank_norm']], how='left', on=['season','team_id','player_id'])
-prof_df = prof_df.merge(avdstats.loc[:,['player_id','season','E_DEF_RATING','AST_PCT','USG']], how='left', on=['season', 'player_id'])
-prof_df = prof_df.merge(pos.loc[:,['player_id','positions']], how='left', on='player_id')
+prof_df = prof_df.merge(avdstats.loc[:,['player_id','season','team_id','E_DEF_RATING','AST_PCT','USG']], how='left', on=['season', 'team_id','player_id'])
 
-print(prof_df.duplicated(['season','team_id','player_id']).sum())
+pos_clean = pos.drop_duplicates(['player_id', 'positions'])
+
+assert pos_clean['player_id'].is_unique
+prof_df = prof_df.merge(pos_clean[['player_id', 'positions']],
+                        how='left', on='player_id', validate='many_to_one')
+
+
+prof_df.loc[:['season','team_id','player_id','player_name','positions','pagerank_norm','E_DEF_RATING','AST_PCT','USG','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att']].to_sql('player_profiles', con, if_exists='replace', index=False)
+
+cursor.close()
+con.close()
 
 features = ['positions','pagerank_norm','E_DEF_RATING','AST_PCT','USG','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att']
 
