@@ -176,7 +176,7 @@ def update_team_list(selected_season, pathname, current_team_value):
         df = pageranks_yr
         team_options = sorted(team_df['full_name'].to_numpy())
 
-    if pathname == '/over_under_players':
+    if pathname in ['/over_under_players','/player_profiles']:
         team_options = ['All'] + team_options
 
     # If we're recomputing (page changed, or playoffs season changed),
