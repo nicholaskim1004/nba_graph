@@ -61,8 +61,8 @@ print(proportion_shots.head())
 page_norm = pageranks_players.groupby(['season','team_id']).apply(lambda x: x['pagerank']/x['pagerank'].sum())
 pageranks_players['pagerank_norm'] = page_norm.reset_index(level=[0,1], drop=True)
 
-prof_df = proportion_shots.merge(pageranks_players[['player_id', 'pagerank_norm']], how='left', on='player_id')
-#prof_df = prof_df.merge(avdstats.loc[:,['player_id','season','E_DEF_RATING','AST_PCT','USG']], how='left', on=['player_id', 'season'])
-#prof_df = prof_df.merge(pos, how='left', on='player_id')
+prof_df = proportion_shots.merge(pageranks_players[['player_id', 'season','pagerank_norm']], how='left', on=['season','player_id'])
+prof_df = prof_df.merge(avdstats.loc[:,['player_id','season','E_DEF_RATING','AST_PCT','USG']], how='left', on=['season', 'player_id'])
+prof_df = prof_df.merge(pos, how='left', on='player_id')
 
 print(prof_df.head())
