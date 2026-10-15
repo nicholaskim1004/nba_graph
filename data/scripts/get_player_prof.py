@@ -24,11 +24,11 @@ cursor.execute("""
                     E_DEF_RATING REAL,
                     AST_PCT REAL,
                     USG REAL,
-                    paint_att REAL,
-                    mid_range_att REAL,
-                    left_corner_att REAL,
-                    right_corner_att REAL,
-                    above_break_att REAL
+                    paint_prop REAL,
+                    mid_range_prop REAL,
+                    left_corner_prop REAL,
+                    right_corner_prop REAL,
+                    above_break_prop REAL
                )
                """)
 
@@ -76,7 +76,10 @@ prof_df = prof_df.merge(pos_clean[['player_id', 'positions']],
                         how='left', on='player_id', validate='many_to_one')
 
 
-prof_df.loc[:,['season','team_id','player_id','player_name','positions','pagerank_norm','E_DEF_RATING','AST_PCT','USG','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att']].to_sql('player_profiles', con, if_exists='replace', index=False)
+prof_df.rename(columns={'paint_att':'paint_prop','mid_range_att':'mid_range_prop','left_corner_att':'left_corner_prop','right_corner_att':'right_corner_prop','above_break_att':'above_break_prop'}, inplace=True)
+
+
+prof_df.loc[:,['season','team_id','player_id','player_name','positions','pagerank_norm','E_DEF_RATING','AST_PCT','USG','paint_prop','mid_range_prop','left_corner_prop','right_corner_prop','above_break_prop']].to_sql('player_profiles', con, if_exists='replace', index=False)
 
 cursor.close()
 con.close()
