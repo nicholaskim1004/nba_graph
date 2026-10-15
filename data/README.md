@@ -226,3 +226,26 @@ stores the expected pagerank and residual for a player given their PIE and posit
 | E_NET_RATING | Expected Net Rating, estimated impact of a player (diff in off and def rating) |
 | expected_pagerank | the expected imporatance to a teams offense based on position and PIE_SHARE |
 | pagerank_residual | the difference between actual and expected pagerank, to find underrated or overrated players | 
+
+# player_profiles
+
+stores table with 10 unique characterisitics to chart their playing profile
+
+| Column | Description | 
+| -------- | -------- |
+| season | string of season ex. '2020-21' |
+| team_id | unique id for team (one that player ended year at) | 
+| player_id | unique id for player (one where passes originate from) |
+| player_name | player's full name (last, first) |
+| positions | player position, 1 of 5 label |
+| pagerank_norm | pagerank normalized to their team | 
+| E_DEF_RATING | Expected Defensive Rating, metric to estimate how many points a player allows when on the court | 
+| AST_PCT | Assist Percentage, metric to estimate how many percentage of a team's field goals a player assists on |
+| USG | Usage Rate, metric to capture how many possessions end with the player |
+| paint_att | Number of shot attempts in the paint | 
+| mid_range_att | Number of shot attempts in the paint | 
+| left_corner_att | Number of shot attempts in the paint | 
+| right_corner_att | Number of shot attempts in the paint | 
+| above_break_att | Number of shot attempts in the paint | 
+
+
