@@ -63,6 +63,14 @@ proportion_shots = shots_f[['season','team_id','player_id','player_name'] + zone
 #features in player profile:
 #pagerank, position, Def rating, prop at 6 shot locations, ast_pct, usg_pct
 
+
+atl_25 = pageranks_players[(pageranks_players['season'] == '2025-26') & (pageranks_players['team_id'] == 1610612737)]
+atl_norm = atl_25.apply(lambda x: x['pagerank']/x['pagerank'].sum())
+atl_25['pagerank_norm'] = atl_norm
+
+print(atl_25)
+
+
 page_norm = pageranks_players.groupby(['season','team_id']).apply(lambda x: x['pagerank']/x['pagerank'].sum())
 pageranks_players['pagerank_norm'] = page_norm.reset_index(level=[0,1], drop=True)
 
@@ -83,7 +91,7 @@ prof_df['def_rating_per_rank'] = def_rating_per_rank.reset_index(level=0, drop=T
 prof_df.rename(columns={'paint_att':'paint_prop','mid_range_att':'mid_range_prop','left_corner_att':'left_corner_prop','right_corner_att':'right_corner_prop','above_break_att':'above_break_prop'}, inplace=True)
 
 
-prof_df.loc[:,['season','team_id','player_id','player_name','positions','pagerank_norm','def_rating_per_rank','AST_PCT','USG','paint_prop','mid_range_prop','left_corner_prop','right_corner_prop','above_break_prop']].to_sql('player_profiles', con, if_exists='replace', index=False)
+#prof_df.loc[:,['season','team_id','player_id','player_name','positions','pagerank_norm','def_rating_per_rank','AST_PCT','USG','paint_prop','mid_range_prop','left_corner_prop','right_corner_prop','above_break_prop']].to_sql('player_profiles', con, if_exists='replace', index=False)
 
 cursor.close()
 con.close()
