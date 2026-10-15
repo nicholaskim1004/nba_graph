@@ -21,7 +21,7 @@ cursor.execute("""
                     player_name TEXT,
                     positions TEXT,
                     pagerank_norm REAL,
-                    E_DEF_RATING REAL,
+                    def_rating_per_rank REAL,
                     AST_PCT REAL,
                     USG REAL,
                     paint_prop REAL,
@@ -46,7 +46,7 @@ pos = pd.read_sql_query(positions, con)
 
 
 shot_types = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
-
+seasons = pageranks['season'].unique()
 
 pageranks_players = pageranks[~pageranks['node_name'].isin(shot_types)]
 
@@ -75,11 +75,15 @@ assert pos_clean['player_id'].is_unique
 prof_df = prof_df.merge(pos_clean[['player_id', 'positions']],
                         how='left', on='player_id', validate='many_to_one')
 
+#making e-def rating into proportions (percentile ranks within in each season)
+def_rating_per_rank = prof_df.groupby('season')['E_DEF_RATING'].rank(method='min', ascending=False, pct=True)
+prof_df['def_rating_per_rank'] = def_rating_per_rank.reset_index(level=0, drop=True)
+
 
 prof_df.rename(columns={'paint_att':'paint_prop','mid_range_att':'mid_range_prop','left_corner_att':'left_corner_prop','right_corner_att':'right_corner_prop','above_break_att':'above_break_prop'}, inplace=True)
 
 
-prof_df.loc[:,['season','team_id','player_id','player_name','positions','pagerank_norm','E_DEF_RATING','AST_PCT','USG','paint_prop','mid_range_prop','left_corner_prop','right_corner_prop','above_break_prop']].to_sql('player_profiles', con, if_exists='replace', index=False)
+prof_df.loc[:,['season','team_id','player_id','player_name','positions','pagerank_norm','def_rating_per_rank','AST_PCT','USG','paint_prop','mid_range_prop','left_corner_prop','right_corner_prop','above_break_prop']].to_sql('player_profiles', con, if_exists='replace', index=False)
 
 cursor.close()
 con.close()
