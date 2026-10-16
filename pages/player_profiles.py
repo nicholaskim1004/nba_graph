@@ -22,7 +22,7 @@ cursor = con.cursor()
 query = "SELECT * FROM player_profiles"
 prof_df = pd.read_sql_query(query, con)
 
-features = ['positions','pagerank_norm','def_rating_per_rank','AST_PCT','USG','paint_prop','mid_range_prop','left_corner_prop','right_corner_prop','above_break_prop']
+features = ['positions','pagerank_scaled','def_rating_per_rank','AST_PCT','USG','paint_prop','mid_range_prop','left_corner_prop','right_corner_prop','above_break_prop']
 
 preprocessor = ColumnTransformer(
     transformers=[
@@ -86,29 +86,15 @@ curry = prof_df[prof_df['player_name']=='Stephen Curry'].iloc[0][features]
 #notes
 #try shot location proportions to be percentile ranks instead of proportions
 
-print(prof_df[(prof_df['player_name']=='Jalen Johnson')&(prof_df['season']=='2025-26')]['pagerank_norm'])
+similar_players = similar(201939, '2020-21',30)
 
-fig = go.Figure()
+print(similar_players.loc[:,['player_name','season','distance']])
+#using px.line_polar to overlay
+#making df into long format for px.line_polar
+df = pd.DataFrame([lebron.values[1:], curry.values[1:]], columns=features[1:], index=['LeBron James', 'Stephen Curry']).reset_index().melt(id_vars='index')
 
-fig.add_trace(go.Scatterpolar(
-      r=lebron.values[1:],
-      theta=features[1:],
-      fill='toself',
-      name='LeBron James'
-))
-fig.add_trace(go.Scatterpolar(
-      r=curry.values[1:],
-      theta=features[1:],
-      fill='toself',
-      name='Stephen Curry'
-))
+fig = px.line_polar(df, r='value', theta='variable', color='index', line_close=True)
+fig.update_traces(fill='toself', opacity=0.4)
+fig.update_layout(title="Multiple Radar Traces Overlay")
 
-fig.update_layout(
-  polar=dict(
-    radialaxis=dict(
-      visible=True,
-      range=[0, 1]
-    )),
-  showlegend=False
-)
 fig.show()
