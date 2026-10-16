@@ -201,7 +201,7 @@ def update_season_slider_options(pathname):
     marks = {i: seasons[i] for i in range(len(seasons)) }
     max = len(seasons)-1
     value = max
-    if pathname == '/over_under_players':
+    if pathname in ['/over_under_players','/player_profiles']:
         max += 1
         marks[max] = 'All'
         value += 1
