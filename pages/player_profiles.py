@@ -48,7 +48,6 @@ def similar(player_id, season, n=5):
     return prof_df.iloc[idx].assign(distance=dist[idx])
 
 
-'''
 dash.register_page(__name__, path='/player_profiles', name='Player Profiles', order = 4)
 
 layout = html.Div([
@@ -70,31 +69,6 @@ layout = html.Div([
 def update_player_profile_graph(player_name):
     
     player_prof = prof_df[(prof_df['player_name'] == player_name)&(prof_df['season'] == '2020-21')]
+    fig = px.line_polar(player_prof, r=player_prof[features[1:]].values.flatten(), theta=features[1:], line_close=True, title=f"{player_name} Player Profile").update_traces(fill='toself', opacity=0.4)
     
-    
-    return
-
-'''
-
-similar_players = similar(2544, '2020-21',30)
-
-
-#sample of player profile rader graph
-lebron = prof_df[prof_df['player_id'] == 2544].iloc[0][features]
-curry = prof_df[prof_df['player_name']=='Stephen Curry'].iloc[0][features]
-
-#notes
-#try shot location proportions to be percentile ranks instead of proportions
-
-similar_players = similar(201939, '2020-21',30)
-
-print(similar_players.loc[:,['player_name','season','distance']])
-#using px.line_polar to overlay
-#making df into long format for px.line_polar
-df = pd.DataFrame([lebron.values[1:], curry.values[1:]], columns=features[1:], index=['LeBron James', 'Stephen Curry']).reset_index().melt(id_vars='index')
-
-fig = px.line_polar(df, r='value', theta='variable', color='index', line_close=True)
-fig.update_traces(fill='toself', opacity=0.4)
-fig.update_layout(title="Multiple Radar Traces Overlay")
-
-fig.show()
+    return fig
