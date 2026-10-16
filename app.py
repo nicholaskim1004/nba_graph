@@ -182,7 +182,7 @@ def update_team_list(selected_season, pathname, current_team_value):
     # If we're recomputing (page changed, or playoffs season changed),
     # keep the user's current team if it's still valid for the new option set;
     # otherwise fall back to a sensible default.
-    if pathname == '/over_under_players':
+    if pathname in ['/over_under_players','/player_profiles']:
         default_value = 'All'
     elif current_team_value in team_options:
         default_value = current_team_value

@@ -23,6 +23,7 @@ query = "SELECT * FROM player_profiles"
 prof_df = pd.read_sql_query(query, con)
 
 teams_nba = pd.DataFrame(teams.get_teams())
+seasons = prof_df['season'].unique()
 
 #merging team names to player profiles
 prof_df = prof_df.merge(teams_nba[['id','full_name']], left_on='team_id', right_on='id', how='left').drop(columns=['id']).rename(columns={'full_name': 'team_name'})
@@ -99,6 +100,22 @@ layout = html.Div([
         style_header={'fontWeight': 'bold'},
         data = [])
 ])
+
+#change the player dropdown based on the season selected in the season slider
+@callback(
+    Output("player_profile_choice", "options"),
+    Output("player_profile_choice", "value"),
+    Input("season-slider", "value")
+)
+def update_player_dropdown(season_index):
+    if season_index >= len(seasons):  # "All" option selected
+        options = prof_df['player_name_season'].unique()
+    else:
+        selected_season = seasons[season_index]
+        options = prof_df[prof_df['season'] == selected_season]['player_name_season'].unique()
+
+    value = options[0] if len(options) > 0 else None
+    return options, value
 
 @callback(
     Output('player_profile_graph', 'figure'),
