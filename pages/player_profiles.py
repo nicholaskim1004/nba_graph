@@ -59,7 +59,17 @@ layout = html.Div([
     html.Br(),
     html.Div(
         dcc.Graph(id='player_profile_graph', style={'height': '600px'}),
-    )
+    ),
+    html.Label('Similar Players:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
+    dcc.Dropdown(id='num_similar_players',
+                options=[5, 10, 15, 20],
+                value=5,
+                style={"fontFamily": 'sans-serif','width': '10%'}),
+    dash_table.DataTable(id='similar_players_table',
+        columns=[{"name": i, "id": i} for i in ['player_name','season','team_id','distance']],
+        style_cell={'textAlign': 'left', "fontFamily": 'sans-serif'},
+        style_header={'fontWeight': 'bold'},
+        data = [])
 ])
 
 @callback(
@@ -72,3 +82,16 @@ def update_player_profile_graph(player_name):
     fig = px.line_polar(player_prof, r=player_prof[features[1:]].values.flatten(), theta=features[1:], line_close=True, title=f"{player_name} Player Profile").update_traces(fill='toself', opacity=0.4)
     
     return fig
+
+@callback(
+    Output('similar_players_table', 'data'),
+    [Input('player_profile_choice', 'value'), Input('num_similar_players', 'value')]
+)
+def update_similar_players_table(player_name, num_similar):
+    player_prof = prof_df[(prof_df['player_name'] == player_name)&(prof_df['season'] == '2020-21')]
+    if player_prof.empty:
+        return []
+    player_id = player_prof.iloc[0]['player_id']
+    season = player_prof.iloc[0]['season']
+    similar_players = similar(player_id, season)
+    return similar_players[['player_name','season','team_id','distance']].to_dict('records')
