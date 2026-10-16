@@ -238,7 +238,7 @@ stores table with 10 unique characterisitics to chart their playing profile
 | player_id | unique id for player (one where passes originate from) |
 | player_name | player's full name (last, first) |
 | positions | player position, 1 of 5 label |
-| pagerank_norm | pagerank normalized to their team | 
+| pagerank_scaled| pagerank for players scaled by its max | 
 | def_rating_per_rank | Expected Defensive Rating, metric to estimate how many points a player allows when on the court. Converted into a percentile rank for a given season | 
 | AST_PCT | Assist Percentage, metric to estimate how many percentage of a team's field goals a player assists on |
 | USG | Usage Rate, metric to capture how many possessions end with the player |
