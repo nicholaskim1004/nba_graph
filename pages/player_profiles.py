@@ -103,6 +103,7 @@ def update_player_profile_table(choice):
     player_prof = prof_df[(prof_df['player_name'] == player_name)&(prof_df['season'] == season)]
     if player_prof.empty:
         return []
+    player_prof[features[1:]] = player_prof[features[1:]].round(3)
     return player_prof[features].to_dict('records')
 
 
