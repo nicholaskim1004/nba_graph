@@ -47,19 +47,28 @@ def similar(player_id, season, n=5):
     idx = np.argsort(dist)[:n]
     return prof_df.iloc[idx].assign(distance=dist[idx])
 
+#making a column that combines player name and season for the dropdown
+prof_df['player_name_season'] = prof_df['player_name'] + ' (' + prof_df['season'] + ')' 
+
 
 dash.register_page(__name__, path='/player_profiles', name='Player Profiles', order = 4)
 
 layout = html.Div([
     html.Label('Choice:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
     dcc.Dropdown(id='player_profile_choice',
-                options=prof_df['player_name'].unique(),
-                value=prof_df['player_name'].unique()[0],
+                options=prof_df['player_name_season'].unique(),
+                value=prof_df['player_name_season'].unique()[0],
                 style={"fontFamily": 'sans-serif','width': '10%'}),
     html.Br(),
     html.Div(
         dcc.Graph(id='player_profile_graph', style={'height': '600px'}),
     ),
+    dash_table.DataTable(id='player_profile_table',
+        columns=[{"name": i, "id": i} for i in features],
+        style_cell={'textAlign': 'left', "fontFamily": 'sans-serif'},
+        style_header={'fontWeight': 'bold'},
+        data = []),
+    html.Br(),
     html.Label('Similar Players:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
     dcc.Dropdown(id='num_similar_players',
                 options=[5, 10, 15, 20],
@@ -76,22 +85,38 @@ layout = html.Div([
     Output('player_profile_graph', 'figure'),
     Input('player_profile_choice', 'value')
 )
-def update_player_profile_graph(player_name):
-    
-    player_prof = prof_df[(prof_df['player_name'] == player_name)&(prof_df['season'] == '2020-21')]
+def update_player_profile_graph(choice):
+    player_name, season = choice.split(' (')  # Extract the player name and season
+    season = season[:-1]  # Remove the closing parenthesis
+    player_prof = prof_df[(prof_df['player_name'] == player_name)&(prof_df['season'] == season)]
     fig = px.line_polar(player_prof, r=player_prof[features[1:]].values.flatten(), theta=features[1:], line_close=True, title=f"{player_name} Player Profile").update_traces(fill='toself', opacity=0.4)
     
     return fig
 
 @callback(
+    Output('player_profile_table', 'data'),
+    Input('player_profile_choice', 'value')
+)
+def update_player_profile_table(choice):
+    player_name, season = choice.split(' (')  # Extract the player name and season
+    season = season[:-1]  # Remove the closing parenthesis
+    player_prof = prof_df[(prof_df['player_name'] == player_name)&(prof_df['season'] == season)]
+    if player_prof.empty:
+        return []
+    return player_prof[features].to_dict('records')
+
+
+@callback(
     Output('similar_players_table', 'data'),
     [Input('player_profile_choice', 'value'), Input('num_similar_players', 'value')]
 )
-def update_similar_players_table(player_name, num_similar):
-    player_prof = prof_df[(prof_df['player_name'] == player_name)&(prof_df['season'] == '2020-21')]
+def update_similar_players_table(choice, num_similar):
+    player_name, season = choice.split(' (')  # Extract the player name and season
+    season = season[:-1]  # Remove the closing parenthesis
+    player_prof = prof_df[(prof_df['player_name'] == player_name)&(prof_df['season'] == season)]
     if player_prof.empty:
         return []
     player_id = player_prof.iloc[0]['player_id']
     season = player_prof.iloc[0]['season']
-    similar_players = similar(player_id, season)
+    similar_players = similar(player_id, season, num_similar)
     return similar_players[['player_name','season','team_id','distance']].to_dict('records')
