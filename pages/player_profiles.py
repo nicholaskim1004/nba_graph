@@ -109,12 +109,20 @@ layout = html.Div([
     Input("team-dropdown", "value")
 )
 def update_player_dropdown(season_index, team_value):
-    if season_index >= len(seasons):  # "All" option selected
-        options = prof_df[prof_df['team_name'] == team_value]['player_name_season'].unique()
+    if team_value == 'All':
+        if season_index >= len(seasons):  # "All" option selected
+            options = prof_df['player_name_season'].unique()
+        else:
+            selected_season = seasons[season_index]
+            options = prof_df[prof_df['season'] == selected_season]['player_name_season'].unique()
     else:
-        selected_season = seasons[season_index]
-        options = prof_df[(prof_df['season'] == selected_season) & (prof_df['team_name'] == team_value)]['player_name_season'].unique()
+        if season_index >= len(seasons):  # "All" option selected
+            options = prof_df[prof_df['team_name'] == team_value]['player_name_season'].unique()
+        else:
+            selected_season = seasons[season_index]
+            options = prof_df[(prof_df['season'] == selected_season) & (prof_df['team_name'] == team_value)]['player_name_season'].unique()
 
+    print(len(options))
     value = options[0] if len(options) > 0 else None
     return options, value
 
