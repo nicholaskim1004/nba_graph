@@ -67,6 +67,34 @@ def get_player_profile(choice):
         player_prof = row
     return player_name, player_prof.copy()
 
+def profile_vector(name, season, team=None):
+    """Feature vector for one player-season (averaged if multiple teams)."""
+    rows = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
+    if team is not None:
+        rows = rows[rows['team_name'] == team]
+    if rows.empty:
+        return None
+    return rows[features[1:]].mean(axis=0)
+
+
+def build_radar(traces, title):
+    """traces: list of (label, pd.Series of feature values)."""
+    theta = features[1:]
+    fig = go.Figure()
+    for label, s in traces:
+        r = s.values.tolist()
+        fig.add_trace(go.Scatterpolar(
+            r=r + r[:1],                 # repeat first point to close the loop
+            theta=theta + theta[:1],
+            fill='toself',
+            opacity=0.4,
+            name=label,
+        ))
+    fig.update_layout(title=title, 
+                      showlegend=True, 
+                      polar=dict(radialaxis=dict(range=[0, 1], visible=True)))
+    return fig
+
 #making a column that combines player name and season for the dropdown
 prof_df['player_name_season'] = prof_df['player_name'] + ' (' + prof_df['season'] + ')' 
 
@@ -126,21 +154,29 @@ def update_player_dropdown(season_index, team_value):
 
 @callback(
     Output('player_profile_graph', 'figure'),
-    Input('player_profile_choice', 'value')
+    Input('player_profile_choice', 'value'),
+    Input('similar_players_table', 'active_cell'),
+    State('similar_players_table', 'data'),
 )
-def update_player_profile_graph(choice):
-    player_name, player_prof = get_player_profile(choice)
-    if player_prof.empty:
-        return px.line_polar()  # or an empty/placeholder figure
+def update_player_profile_graph(choice, active_cell, table_data):
+    if not choice:
+        return go.Figure()
+    player_name, season = choice.split(' (')
+    season = season[:-1]
 
-    fig = px.line_polar(
-        r=player_prof[features[1:]].values.flatten(),
-        theta=features[1:],
-        line_close=True,
-        title=f"{player_name} Player Profile",
-    ).update_traces(fill='toself', opacity=0.4)
-    return fig
+    main = profile_vector(player_name, season)
+    if main is None:
+        return go.Figure()
+    traces = [(f"{player_name} ({season})", main)]
 
+    # only add the comparison if the click came from the table, not a player change
+    if active_cell and table_data and ctx.triggered_id == 'similar_players_table':
+        row = table_data[active_cell['row']]
+        other = profile_vector(row['player_name'], row['season'], row['team_name'])
+        if other is not None:
+            traces.append((f"{row['player_name']} ({row['season']})", other))
+
+    return build_radar(traces, f"{player_name} Player Profile")
 
 @callback(
     Output('player_profile_table', 'data'),
@@ -155,15 +191,17 @@ def update_player_profile_table(choice):
 
 @callback(
     Output('similar_players_table', 'data'),
-    [Input('player_profile_choice', 'value'), Input('num_similar_players', 'value')]
+    Output('similar_players_table', 'active_cell'),
+    Input('player_profile_choice', 'value'),
+    Input('num_similar_players', 'value'),
 )
 def update_similar_players_table(choice, num_similar):
     player_name, season = choice.split(' (')  # Extract the player name and season
     season = season[:-1]  # Remove the closing parenthesis
     player_prof = prof_df[(prof_df['player_name'] == player_name)&(prof_df['season'] == season)]
     if player_prof.empty:
-        return []
+        return [], None
     player_id = player_prof.iloc[0]['player_id']
     season = player_prof.iloc[0]['season']
     similar_players = similar(player_id, season, num_similar)
-    return similar_players[['player_name','season','team_name','distance']].to_dict('records')
+    return similar_players[['player_name','season','team_name','distance']].to_dict('records'), None
