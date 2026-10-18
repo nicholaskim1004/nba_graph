@@ -108,14 +108,25 @@ layout = html.Div([
                 value=prof_df['player_name_season'].unique()[0],
                 style={"fontFamily": 'sans-serif','width': '10%'}),
     html.Br(),
-    html.Div(
-        dcc.Graph(id='player_profile_graph', style={'height': '600px'}),
+    html.Div(style={
+        'display': 'flex',
+        'flexDirection': 'row',
+        'gap': '20px',
+        'width': '100%'
+    },
+        children=[
+            html.Div(
+                dcc.Graph(id='player_profile_graph', style={'height': '600px'}),
+            ),
+            html.Div(
+                dash_table.DataTable(id='player_profile_table',
+                    columns=[{"name": i, "id": i} for i in features],
+                    style_cell={'textAlign': 'left', "fontFamily": 'sans-serif'},
+                    style_header={'fontWeight': 'bold'},
+                    data = []),
+                style={'width': '40%'}
+            )]
     ),
-    dash_table.DataTable(id='player_profile_table',
-        columns=[{"name": i, "id": i} for i in features],
-        style_cell={'textAlign': 'left', "fontFamily": 'sans-serif'},
-        style_header={'fontWeight': 'bold'},
-        data = []),
     html.Br(),
     html.Label('Similar Players:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
     dcc.Dropdown(id='num_similar_players',
