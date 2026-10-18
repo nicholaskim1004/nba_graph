@@ -104,7 +104,7 @@ layout = html.Div([
 
         # RIGHT: PageRank table
         html.Div(
-            dash_table.DataTable(
+            children = [dash_table.DataTable(
                 id='pagerank_table',
                 data=[],
                 columns=[
@@ -119,6 +119,15 @@ layout = html.Div([
                     }
                 ]
             ),
+            html.Details(
+                            style={'fontFamily': 'sans-serif', 'marginTop': '16px'},
+                            children=[
+                                html.Summary("Hidden Features", style={'cursor': 'pointer', 'fontWeight': 'bold'}),
+                                html.Ul([
+                                    html.Li("Click on a node in the network or a row in the table to see the edge weights for that node.")
+                                ]),
+                            ],
+                        )],
             style={
                 'width': '30%'
             }

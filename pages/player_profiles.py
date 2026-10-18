@@ -116,16 +116,21 @@ layout = html.Div([
     },
         children=[
             html.Div(
-                dcc.Graph(id='player_profile_graph', style={'height': '600px'}),
+                dcc.Graph(id='player_profile_graph', style={'height': '600px','width': '900px'}),
             ),
             html.Div(
-                dash_table.DataTable(id='player_profile_table',
-                    columns=[{"name": i, "id": i} for i in features],
-                    style_cell={'textAlign': 'left', "fontFamily": 'sans-serif'},
-                    style_header={'fontWeight': 'bold'},
-                    data = []),
-                style={'width': '40%'}
-            )]
+            dash_table.DataTable(
+                id='player_profile_table',
+                columns=[
+                    {"name": "Feature", "id": "feature"},
+                    {"name": "Value", "id": "value"},
+                ],
+                style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
+                style_header={'fontWeight': 'bold'},
+                data=[],
+            ),
+            style={'flex': '1 1 25%', 'minWidth': 0},
+        )]
     ),
     html.Br(),
     html.Label('Similar Players:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
@@ -197,9 +202,12 @@ def update_player_profile_table(choice):
     _, player_prof = get_player_profile(choice)
     if player_prof.empty:
         return []
-    player_prof[features[1:]] = player_prof[features[1:]].round(3)
-    return player_prof[features].to_dict('records')
-
+    row = player_prof.iloc[0]
+    return [
+        {"feature": f, "value": row[f] if f == 'positions' else round(float(row[f]), 3)}
+        for f in features
+    ]
+    
 @callback(
     Output('similar_players_table', 'data'),
     Output('similar_players_table', 'active_cell'),
