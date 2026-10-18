@@ -119,16 +119,26 @@ layout = html.Div([
                 dcc.Graph(id='player_profile_graph', style={'height': '600px','width': '900px'}),
             ),
             html.Div(
-            dash_table.DataTable(
-                id='player_profile_table',
-                columns=[
-                    {"name": "Feature", "id": "feature"},
-                    {"name": "Value", "id": "value"},
-                ],
-                style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
-                style_header={'fontWeight': 'bold'},
-                data=[],
-            ),
+                children=[
+                    html.Img(
+                        id='player-profile-image',
+                        src='',
+                        style={
+                            'width': '100%',
+                            'height': 'auto',
+                            'objectFit': 'contain'
+                        }
+                    ),
+                    dash_table.DataTable(
+                        id='player_profile_table',
+                        columns=[
+                            {"name": "Feature", "id": "feature"},
+                            {"name": "Value", "id": "value"},
+                        ],
+                        style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
+                        style_header={'fontWeight': 'bold'},
+                        data=[],
+                    )],
             style={'flex': '1 1 25%', 'minWidth': 0},
         )]
     ),
@@ -224,3 +234,18 @@ def update_similar_players_table(choice, num_similar):
     season = player_prof.iloc[0]['season']
     similar_players = similar(player_id, season, num_similar)
     return similar_players[['player_name','season','team_name','distance']].to_dict('records'), None
+
+#showing correct player image based on the player selected in the dropdown
+@callback(
+    Output('player-profile-image', 'src'),
+    Input('player_profile_choice', 'value')
+)
+def update_player_image(choice):    
+    player_name, _ = choice.split(' (')
+    
+    player_prof = prof_df[prof_df['player_name'] == player_name]
+    if player_prof.empty:
+        return ''
+    player_id = player_prof.iloc[0]['player_id']
+    image_url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{player_id}.png"
+    return image_url
