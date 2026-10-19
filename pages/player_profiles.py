@@ -148,6 +148,7 @@ layout = html.Div([
                 options=[5, 10, 15, 20],
                 value=5,
                 style={"fontFamily": 'sans-serif','width': '10%'}),
+    html.Br(),
     dash_table.DataTable(id='similar_players_table',
         columns=[{"name": i, "id": i} for i in ['player_name','season','team_name','distance']],
         style_cell={'textAlign': 'left', "fontFamily": 'sans-serif'},
@@ -178,19 +179,26 @@ def update_player_dropdown(season_index, team_value):
     value = options[0] if len(options) > 0 else None
     return options, value
 
+#building the player profile graph based on the player selected in the dropdown and the similar players selected in the table
 @callback(
     Output('player_profile_graph', 'figure'),
     Input('player_profile_choice', 'value'),
     Input('similar_players_table', 'active_cell'),
+    Input('team-dropdown', 'value'),
     State('similar_players_table', 'data'),
 )
-def update_player_profile_graph(choice, active_cell, table_data):
+def update_player_profile_graph(choice, active_cell, team_value, table_data):
     if not choice:
         return go.Figure()
     player_name, season = choice.split(' (')
     season = season[:-1]
 
-    main = profile_vector(player_name, season)
+    #if team is All and player traded us the mean otherwise use team specific
+    if team_value == 'All':
+        main = profile_vector(player_name, season)
+    else:
+        main = profile_vector(player_name, season, team_value)
+    
     if main is None:
         return go.Figure()
     traces = [(f"{player_name} ({season})", main)]
