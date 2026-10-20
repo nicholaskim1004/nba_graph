@@ -53,14 +53,16 @@ def similar(player_id, season, n=5):
     idx = np.argsort(dist)[:n]
     return prof_df.iloc[idx].assign(distance=dist[idx])
 
-def get_player_profile(choice):
+def get_player_profile(choice, team=None):
     player_name, season = choice.split(' (')
     season = season[:-1]
     player_prof = prof_df[(prof_df['player_name'] == player_name) & (prof_df['season'] == season)]
     if player_prof.empty:
         return player_name, player_prof
 
-    if len(player_prof) > 1:
+    if team is not None:
+        player_prof = player_prof.loc[player_prof['team_name']==team,features[1:]].copy()
+    else:
         # one row: average each feature across the player's rows (e.g. multiple teams)
         row = player_prof.iloc[[0]].copy()
         row[features[1:]] = player_prof[features[1:]].mean(axis=0).values
@@ -214,10 +216,15 @@ def update_player_profile_graph(choice, active_cell, team_value, table_data):
 
 @callback(
     Output('player_profile_table', 'data'),
-    Input('player_profile_choice', 'value')
+    Input('player_profile_choice', 'value'),
+    Input('team-dropdown', 'value')
 )
-def update_player_profile_table(choice):
-    _, player_prof = get_player_profile(choice)
+def update_player_profile_table(choice, team_value):
+    if team_value != 'All':
+        _, player_prof = get_player_profile(choice,team_value)
+    else:
+         _, player_prof = get_player_profile(choice)
+         
     if player_prof.empty:
         return []
     row = player_prof.iloc[0]
