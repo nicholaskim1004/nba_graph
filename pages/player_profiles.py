@@ -149,12 +149,18 @@ layout = html.Div([
                         id='player_profile_table',
                         columns=[
                             {"name": "Feature", "id": "feature"},
-                            {"name": "Value", "id": "value"},
+                            {"name": "Value", "id": "value"}
                         ],
                         style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
                         style_header={'fontWeight': 'bold'},
                         data=[],
-                    )],
+                    ),
+                    html.Div(
+                        dcc.Graph(
+                            id = 'org_v_traded',
+                            figure = {}
+                            )
+                        , style={'display': 'none'})],
             style={'flex': '1 1 25%', 'minWidth': 0},
         )]
     ),
@@ -249,7 +255,24 @@ def update_player_profile_table(choice, team_value):
         for f in features
     ]
     return data
+
+#creating table with differences for traded players
+@callback(
+    Output('org_v_traded', 'figure'),
+    Input('player_profile_choice', 'value'),
+    Input("season-slider", "value")
+)
+def created_traded_player_diff_table(choice, sel_season):
+    player_name, seaason = choice.split('(')
+    season = season[:-1]
+    player_prof = prof_df[(prof_df['player_name']==player_name)&(prof_df['season']==sel_season)]
     
+    if len(player_prof) == 1:
+        return None
+    else:
+        diff_bt_features = player_prof.loc[:,features[1:]].diff()
+    return   
+ 
 @callback(
     Output('similar_players_table', 'data'),
     Output('similar_players_table', 'active_cell'),
