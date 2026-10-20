@@ -122,7 +122,7 @@ layout = html.Div([
     dcc.Dropdown(id='player_profile_choice',
                 options=prof_df['player_name_season'].unique(),
                 value=prof_df['player_name_season'].unique()[0],
-                style={"fontFamily": 'sans-serif','width': '10%'}),
+                style={"fontFamily": 'sans-serif','width': '20%'}),
     html.Br(),
     html.Div(style={
         'display': 'flex',
