@@ -25,9 +25,13 @@ prof_df = pd.read_sql_query(query, con)
 teams_nba = pd.DataFrame(teams.get_teams())
 seasons = prof_df['season'].unique()
 
-#merging team names to player profiles
-prof_df = prof_df.merge(teams_nba[['id','full_name']], left_on='team_id', right_on='id', how='left').drop(columns=['id']).rename(columns={'full_name': 'team_name'})
-
+#merging team names & abbreviation to player profiles
+prof_df = (
+    prof_df.merge(teams_nba[['id', 'full_name', 'abbreviation']],
+                  left_on='team_id', right_on='id', how='left')
+           .drop(columns=['id'])
+           .rename(columns={'full_name': 'team_name', 'abbreviation': 'team_abbr'})
+)
 features = ['positions','pagerank_scaled','def_rating_per_rank','AST_PCT','USG','paint_prop','mid_range_prop','left_corner_prop','right_corner_prop','above_break_prop']
 
 preprocessor = ColumnTransformer(
@@ -61,13 +65,23 @@ def get_player_profile(choice, team=None):
         return player_name, player_prof
 
     if team is not None:
-        player_prof = player_prof.loc[player_prof['team_name']==team,features[1:]].copy()
+        player_prof = player_prof.loc[player_prof['team_name']==team].copy()
     else:
         # one row: average each feature across the player's rows (e.g. multiple teams)
         row = player_prof.iloc[[0]].copy()
         row[features[1:]] = player_prof[features[1:]].mean(axis=0).values
         player_prof = row
     return player_name, player_prof.copy()
+
+#function to show correct team label for player and season
+def team_label(choice, team=None):
+    """'ORL' for one team, 'ORL/DEN' if traded (when no team is selected)."""
+    player_name, season = choice.split(' (')
+    season = season[:-1]
+    rows = prof_df[(prof_df['player_name'] == player_name) & (prof_df['season'] == season)]
+    if team is not None and team != 'All':
+        rows = rows[rows['team_name'] == team]
+    return '/'.join(rows['team_abbr'].dropna().unique())
 
 def profile_vector(name, season, team=None):
     """Feature vector for one player-season (averaged if multiple teams)."""
@@ -214,24 +228,27 @@ def update_player_profile_graph(choice, active_cell, team_value, table_data):
 
     return build_radar(traces, f"{player_name} Player Profile")
 
+#callback to show correct table used to build radar graph
+#if traded show mean between two when team is selected as All
+#otherwise split into seperate teams 
+
 @callback(
     Output('player_profile_table', 'data'),
     Input('player_profile_choice', 'value'),
     Input('team-dropdown', 'value')
 )
 def update_player_profile_table(choice, team_value):
-    if team_value != 'All':
-        _, player_prof = get_player_profile(choice,team_value)
-    else:
-         _, player_prof = get_player_profile(choice)
-         
+    team = None if team_value == 'All' else team_value
+    _, player_prof = get_player_profile(choice, team)
     if player_prof.empty:
         return []
     row = player_prof.iloc[0]
-    return [
+    data = [{"feature": "team", "value": team_label(choice, team)}]
+    data += [
         {"feature": f, "value": row[f] if f == 'positions' else round(float(row[f]), 3)}
         for f in features
     ]
+    return data
     
 @callback(
     Output('similar_players_table', 'data'),
