@@ -20,7 +20,6 @@ cursor.execute("""
                    team_id INTEGER,
                    player_id INTEGER,
                    player_name TEXT,
-                   TOTAL_MIN INTEGER,
                    PIE REAL, 
                    PIE_SHARE REAL,
                    TS REAL,
@@ -46,30 +45,26 @@ for yr in years:
     print(f'starting pull for season {yr}')
     
     print('bringing in avd stats table 🤓')
-    avdstats = leaguedashplayerstats.LeagueDashPlayerStats(season=yr,measure_type_detailed_defense="Advanced").get_data_frames()[0]
-    avdstats['TOTAL_MIN'] = avdstats['GP']*avdstats['MIN']
     
+    for team_id in team_df['id']:
+        #team_id_nullable will filter to get stats for that specific team in a given season. will remove the need to estimate amounts with minutes
+        avdstats = leaguedashplayerstats.LeagueDashPlayerStats(season=yr,measure_type_detailed_defense="Advanced",team_id_nullable=team_id).get_data_frames()[0]
+
     pageranks_yr = pageranks[pageranks['season']==yr]
     
-    pageranks_yr = pd.merge(pageranks_yr,avdstats.loc[:,['PLAYER_ID','TOTAL_MIN','USG_PCT','PIE','AST_PCT','TS_PCT','E_OFF_RATING','E_DEF_RATING','E_NET_RATING']], left_on='player_id', right_on='PLAYER_ID', how='left').drop('PLAYER_ID', axis = 1)
-    
-    #creating measure to adjust PIE by the total min they played
-    confidence = [min(pageranks_yr['TOTAL_MIN'][i] / 1000, 1) for i in range(len(pageranks_yr['TOTAL_MIN']))]
+    pageranks_yr = pd.merge(pageranks_yr,avdstats.loc[:,['PLAYER_ID','USG_PCT','PIE','AST_PCT','TS_PCT','E_OFF_RATING','E_DEF_RATING','E_NET_RATING']], left_on='player_id', right_on='PLAYER_ID', how='left').drop('PLAYER_ID', axis = 1)
 
-    adj_pie = pageranks_yr['PIE'] * confidence
-
-    pageranks_yr['ADJ_PIE'] = adj_pie
 
     #filtering out nan
-    pageranks_yr = pageranks_yr[~pageranks_yr['ADJ_PIE'].isna()]
+    pageranks_yr = pageranks_yr[~pageranks_yr['PIE'].isna()]
     
     pie_shares = []
 
     print('starting calc pie_share')
     for team in pageranks_yr['full_name'].unique():
         print(f'pie share adjust for team {team}')
-        t_pie = np.sum(pageranks_yr[pageranks_yr['full_name']==team]['ADJ_PIE'])
-        pie_shares.extend(pageranks_yr[pageranks_yr['full_name']==team]['ADJ_PIE']/t_pie)
+        t_pie = np.sum(pageranks_yr[pageranks_yr['full_name']==team]['PIE'])
+        pie_shares.extend(pageranks_yr[pageranks_yr['full_name']==team]['PIE']/t_pie)
         
     pageranks_yr['PIE_SHARE'] = pie_shares
     pageranks_yr = pageranks_yr.rename(columns={
@@ -81,7 +76,7 @@ for yr in years:
     
     chunksize = pageranks_yr.shape[0]
     print(f'saving season {yr} to database...')
-    pageranks_yr.loc[:,['season','team_id','player_id','player_name','TOTAL_MIN','PIE','PIE_SHARE','TS','USG','AST_PCT','E_OFF_RATING','E_DEF_RATING','E_NET_RATING']].to_sql('avdstats_yr', con, if_exists='append', index=False, chunksize=chunksize)
+    pageranks_yr.loc[:,['season','team_id','player_id','player_name','PIE','PIE_SHARE','TS','USG','AST_PCT','E_OFF_RATING','E_DEF_RATING','E_NET_RATING']].to_sql('avdstats_yr', con, if_exists='append', index=False, chunksize=chunksize)
 
 print('finished')
 
