@@ -156,11 +156,19 @@ layout = html.Div([
                         data=[],
                     ),
                     html.Div(
-                        dcc.Graph(
-                            id = 'org_v_traded',
-                            figure = {}
-                            )
-                        , style={'display': 'none'})],
+                    id='traded_diff_container',
+                    style={'display': 'none'},
+                    children=[
+                        html.H5("Change after trade", style={'fontFamily': 'sans-serif'}),
+                        dash_table.DataTable(
+                            id='traded_diff_table',
+                            columns=[],
+                            data=[],
+                            style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
+                            style_header={'fontWeight': 'bold'},
+                        ),
+                    ],
+                ),],
             style={'flex': '1 1 25%', 'minWidth': 0},
         )]
     ),
@@ -257,21 +265,47 @@ def update_player_profile_table(choice, team_value):
     return data
 
 #creating table with differences for traded players
+diff_features = features[1:]
+
 @callback(
-    Output('org_v_traded', 'figure'),
+    Output('traded_diff_table', 'data'),
+    Output('traded_diff_table', 'columns'),
+    Output('traded_diff_table', 'style_data_conditional'),
+    Output('traded_diff_container', 'style'),
     Input('player_profile_choice', 'value'),
-    Input("season-slider", "value")
 )
-def created_traded_player_diff_table(choice, sel_season):
-    player_name, seaason = choice.split('(')
+def update_traded_diff(choice):
+    hidden = {'display': 'none'}
+    if not choice:
+        return [], [], [], hidden
+
+    name, season = choice.split(' (')
     season = season[:-1]
-    player_prof = prof_df[(prof_df['player_name']==player_name)&(prof_df['season']==sel_season)]
-    
-    if len(player_prof) == 1:
-        return None
-    else:
-        diff_bt_features = player_prof.loc[:,features[1:]].diff()
-    return   
+    rows = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
+    if len(rows) < 2:
+        return [], [], [], hidden
+
+    rows = rows.reset_index(drop=True)          # sort by a date/games column first if you have one
+    diffs = rows[diff_features].diff().iloc[1:]  # each stint minus the previous one
+    abbrs = rows['team_abbr'].tolist()
+
+    columns = [{'name': 'Feature', 'id': 'feature'}]
+    data = [{'feature': f} for f in diff_features]
+    styles = []
+
+    for k in range(1, len(rows)):
+        cid = f'd{k}'
+        columns.append({'name': f'{abbrs[k-1]} → {abbrs[k]}', 'id': cid})
+        for rec, f in zip(data, diff_features):
+            rec[cid] = round(float(diffs.iloc[k-1][f]), 3)
+        styles += [
+            {'if': {'filter_query': f'{{{cid}}} < 0', 'column_id': cid},
+             'backgroundColor': '#f8b4b4', 'color': '#7a1212'},
+            {'if': {'filter_query': f'{{{cid}}} > 0', 'column_id': cid},
+             'backgroundColor': '#b4cdf8', 'color': '#12307a'},
+        ]
+
+    return data, columns, styles, {'display': 'block'}
  
 @callback(
     Output('similar_players_table', 'data'),
