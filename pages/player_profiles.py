@@ -132,7 +132,22 @@ layout = html.Div([
     },
         children=[
             html.Div(
-                dcc.Graph(id='player_profile_graph', style={'height': '600px','width': '900px'}),
+                children = [dcc.Graph(id='player_profile_graph', style={'height': '600px','width': '900px'}),
+
+                html.Div(
+                id='traded_diff_container',
+                style={'display': 'none'},
+                children=[
+                    html.H5("Change after trade", style={'fontFamily': 'sans-serif'}),
+                    dash_table.DataTable(
+                        id='traded_diff_table',
+                        columns=[],
+                        data=[],
+                        style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
+                        style_header={'fontWeight': 'bold'},
+                    ),
+                ],
+                )]
             ),
             html.Div(
                 children=[
@@ -154,21 +169,7 @@ layout = html.Div([
                         style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
                         style_header={'fontWeight': 'bold'},
                         data=[],
-                    ),
-                    html.Div(
-                    id='traded_diff_container',
-                    style={'display': 'none'},
-                    children=[
-                        html.H5("Change after trade", style={'fontFamily': 'sans-serif'}),
-                        dash_table.DataTable(
-                            id='traded_diff_table',
-                            columns=[],
-                            data=[],
-                            style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
-                            style_header={'fontWeight': 'bold'},
-                        ),
-                    ],
-                ),],
+                    )],
             style={'flex': '1 1 25%', 'minWidth': 0},
         )]
     ),
@@ -285,19 +286,18 @@ def update_traded_diff(choice):
     if len(rows) < 2:
         return [], [], [], hidden
 
-    rows = rows.reset_index(drop=True)          # sort by a date/games column first if you have one
-    diffs = rows[diff_features].diff().iloc[1:]  # each stint minus the previous one
-    abbrs = rows['team_abbr'].tolist()
+    rows = rows.iloc[::-1].reset_index(drop=True)          # sort by a date/games column first if you have one
 
     columns = [{'name': 'Feature', 'id': 'feature'}]
     data = [{'feature': f} for f in diff_features]
     styles = []
 
     for k in range(1, len(rows)):
+        new, old = rows.iloc[k], rows.iloc[k - 1] 
         cid = f'd{k}'
-        columns.append({'name': f'{abbrs[k-1]} → {abbrs[k]}', 'id': cid})
+        columns.append({'name': f'{old["team_abbr"]} → {new["team_abbr"]}', 'id': cid})
         for rec, f in zip(data, diff_features):
-            rec[cid] = round(float(diffs.iloc[k-1][f]), 3)
+            rec[cid] = round(float(new[f] - old[f]), 3)
         styles += [
             {'if': {'filter_query': f'{{{cid}}} < 0', 'column_id': cid},
              'backgroundColor': '#f8b4b4', 'color': '#7a1212'},
