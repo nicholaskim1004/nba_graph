@@ -1,7 +1,5 @@
 testing.ipynb
 
-#data/scripts/
-
 # Python
 __pycache__/
 *.pyc
