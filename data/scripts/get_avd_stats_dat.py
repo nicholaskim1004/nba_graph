@@ -43,43 +43,42 @@ pageranks = pd.merge(pageranks,team_df.loc[:,['id','full_name']], left_on='team_
 
 for yr in years:
     print(f'starting pull for season {yr}')
-    
-    print('bringing in avd stats table 🤓')
-    
-    pie_shares = []
-    
-    for yr in years:
-        print(f'pulling advanced stats for yr: {yr}')
-        for team_id in team_df['id']:
-            team = team_df.loc[team_df['id']==team_id,'full_name']
-            print(f'pulling stats for team: {team}')
-            #team_id_nullable will filter to get stats for that specific team in a given season. will remove the need to estimate amounts with minutes
-            avdstats = leaguedashplayerstats.LeagueDashPlayerStats(season=yr,measure_type_detailed_defense="Advanced",team_id_nullable=team_id).get_data_frames()[0]
 
-            pageranks_yr_team = pageranks[(pageranks['season']==yr)&(pageranks['team_id']==team_id)]
-            
-            pageranks_yr_team = pd.merge(pageranks_yr_team,avdstats.loc[:,['PLAYER_ID','USG_PCT','PIE','AST_PCT','TS_PCT','E_OFF_RATING','E_DEF_RATING','E_NET_RATING']], left_on='player_id', right_on='PLAYER_ID', how='left').drop('PLAYER_ID', axis = 1)
+    for team_id in team_df['id']:
+        team = team_df.loc[team_df['id'] == team_id, 'full_name'].item()
+        print(f'pulling stats for team: {team}')
 
-            #filtering out nan
-            pageranks_yr_team = pageranks_yr_team[~pageranks_yr_team['PIE'].isna()]
-        
-            print('starting calc pie_share')
-            print(f'pie share adjust for team {team}')
-            t_pie = np.sum(pageranks_yr_team['PIE'])
-            pie_shares.extend(pageranks_yr_team['PIE']/t_pie)
-            
-            pageranks_yr_team['PIE_SHARE'] = pie_shares
-            pageranks_yr_team = pageranks_yr_team.rename(columns={
-                                                    'TS_PCT': 'TS',
-                                                    'USG_PCT': 'USG',
-                                                    'PIE_SHARES': 'PIE_SHARE',
-                                                    'node_name': 'player_name'
-                                                })
-        
-            chunksize = pageranks_yr_team.shape[0]
-            print(f'saving season {yr} to database...')
-            pageranks_yr_team.loc[:,['season','team_id','player_id','player_name','PIE','PIE_SHARE','TS','USG','AST_PCT','E_OFF_RATING','E_DEF_RATING','E_NET_RATING']].to_sql('avdstats_yr', con, if_exists='append', index=False, chunksize=chunksize)
+        avdstats = leaguedashplayerstats.LeagueDashPlayerStats(
+            season=yr,
+            measure_type_detailed_defense="Advanced",
+            team_id_nullable=team_id,
+        ).get_data_frames()[0]
 
+        pageranks_yr_team = pageranks[(pageranks['season'] == yr) & (pageranks['team_id'] == team_id)]
+
+        pageranks_yr_team = pd.merge(
+            pageranks_yr_team,
+            avdstats.loc[:, ['PLAYER_ID','USG_PCT','PIE','AST_PCT','TS_PCT',
+                             'E_OFF_RATING','E_DEF_RATING','E_NET_RATING']],
+            left_on='player_id', right_on='PLAYER_ID', how='left'
+        ).drop('PLAYER_ID', axis=1)
+
+        pageranks_yr_team = pageranks_yr_team[~pageranks_yr_team['PIE'].isna()].copy()
+
+        pageranks_yr_team['PIE_SHARE'] = pageranks_yr_team['PIE'] / pageranks_yr_team['PIE'].sum()
+        pageranks_yr_team = pageranks_yr_team.rename(columns={
+            'TS_PCT': 'TS',
+            'USG_PCT': 'USG',
+            'node_name': 'player_name',
+        })
+
+        pageranks_yr_team[['season','team_id','player_id','player_name','PIE','PIE_SHARE',
+                           'TS','USG','AST_PCT','E_OFF_RATING','E_DEF_RATING','E_NET_RATING']] \
+            .to_sql('avdstats_yr', con, if_exists='append', index=False)
+        time.sleep(1)
+
+    print(f'finished season {yr}...')
+    
 print('finished')
 
 cursor.close()
