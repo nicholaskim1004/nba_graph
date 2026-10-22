@@ -23,6 +23,7 @@ cursor.execute("""
                    player_id INTEGER,
                    player_name TEXT,
                    season TEXT,
+                   min INTEGER,
                    team_id INTEGER,
                    restricted_area_att INTEGER,
                    paint_att INTEGER,
