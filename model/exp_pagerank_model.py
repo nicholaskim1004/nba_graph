@@ -56,16 +56,26 @@ pos.loc[pos['positions']=='Forward-Center','positions'] = 'Center-Forward'
 print('cleaning up missing player ids')
 #cleaning up missing player ids before merges
 pageranks_players = pageranks[~pageranks['node_name'].isin(diff_shots)]
-wrong_ids = pageranks_players[pageranks_players['player_id'].isna()]
 
-player_to_id_df = pageranks_players.loc[~pageranks_players['player_id'].isna(),['node_name','player_id']].drop_duplicates(subset=['node_name'], ignore_index=True)
+# also check for names mapping to multiple ids
+dupes = (pageranks_players.dropna(subset=['player_id'])
+         .groupby('node_name')['player_id'].nunique())
+print("names with multiple ids:", dupes[dupes > 1])
 
-for _, row in wrong_ids.iterrows():
-    index = row.name
+# build name -> id lookup (first id seen per name)
+name_to_id = (pageranks_players.dropna(subset=['player_id'])
+              .drop_duplicates(subset='node_name')
+              .set_index('node_name')['player_id'])
 
-    player_name = row['node_name']
-    
-    pageranks_players.loc[index,'player_id'] = player_to_id_df.loc[player_to_id_df['node_name']==player_name,'player_id'].values
+# fill missing ids from the lookup
+pageranks_players = pageranks_players.copy()
+pageranks_players['player_id'] = pageranks_players['player_id'].fillna(
+    pageranks_players['node_name'].map(name_to_id)
+)
+
+# see what's still unresolved
+still_missing = pageranks_players[pageranks_players['player_id'].isna()]
+print(still_missing['node_name'].unique())
 
 print('mergining data with advanced stats')
 #merging in pos to pagerank
