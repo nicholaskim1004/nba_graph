@@ -76,7 +76,7 @@ for yr in years:
             
         shots_yr_team['min'] = minuets
         
-        chunksize = shots_yr_team.shape(0)
+        chunksize = shots_yr_team.shape()[0]
         
         #saving to database        
         print(f'saving shots for {yr} {team} to database 🖨️')
