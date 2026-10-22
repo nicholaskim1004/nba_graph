@@ -54,36 +54,30 @@ def with_retry(fn, tries=4, wait=3):
 
 #shots dataset
 for yr in years:
-    print(f'🏀 getting shots for {yr}')
-    standings = with_retry(lambda: leaguestandings.LeagueStandings(season=yr, timeout=60).get_data_frames()[0])
-    playoff_teams = standings.loc[standings['PlayoffRank'] <= 8, ['TeamID', 'TeamName']]
+    print(f'🏀 getting playoff shots for {yr}')
 
-    for team_id, team in zip(playoff_teams['TeamID'], playoff_teams['TeamName']):
-        print(f'pulling for team {team}')
+    shots = with_retry(lambda: leaguedashplayershotlocations.LeagueDashPlayerShotLocations(
+        season=yr, season_type_all_star='Playoffs', timeout=60).get_data_frames()[0])
+    time.sleep(1)
 
-        shots = with_retry(lambda: leaguedashplayershotlocations.LeagueDashPlayerShotLocations(
-            season=yr, season_type_all_star='Playoffs',
-            team_id_nullable=team_id, timeout=60).get_data_frames()[0])
-        time.sleep(1)
+    shots = shots.iloc[:, [0, 1, 2, 7, 10, 13, 16, 19, 22, 25]].copy()
+    shots['season'] = yr
+    shots = shots.iloc[:, [0, 1, 10, 2, 3, 4, 5, 6, 7, 8, 9]]
+    shots.columns = ['player_id','player_name','season','team_id','restricted_area_att',
+                     'paint_att','mid_range_att','left_corner_att','right_corner_att',
+                     'above_break_att','backcourt_att']
+    shots = shots.fillna(0)
 
-        shots = shots.iloc[:, [0, 1, 2, 7, 10, 13, 16, 19, 22, 25]].copy()
-        shots['season'] = yr
-        shots = shots.iloc[:, [0, 1, 10, 2, 3, 4, 5, 6, 7, 8, 9]]
-        shots.columns = ['player_id','player_name','season','team_id','restricted_area_att',
-                         'paint_att','mid_range_att','left_corner_att','right_corner_att',
-                         'above_break_att','backcourt_att']
-        shots = shots.fillna(0)
+    stats = with_retry(lambda: leaguedashplayerstats.LeagueDashPlayerStats(
+        season=yr, season_type_all_star='Playoffs',
+        per_mode_detailed='Totals', timeout=60).get_data_frames()[0])
+    time.sleep(1)
 
-        # one call gets playoff minutes for every player on this team
-        stats = with_retry(lambda: leaguedashplayerstats.LeagueDashPlayerStats(
-            season=yr, season_type_all_star='Playoffs',
-            team_id_nullable=team_id, timeout=60).get_data_frames()[0])
-        time.sleep(1)
+    mins = stats[['PLAYER_ID', 'TEAM_ID', 'MIN']].rename(
+        columns={'PLAYER_ID': 'player_id', 'TEAM_ID': 'team_id', 'MIN': 'min'})
+    shots = shots.merge(mins, on=['player_id', 'team_id'], how='left')
 
-        mins = stats[['PLAYER_ID', 'MIN']].rename(columns={'PLAYER_ID': 'player_id', 'MIN': 'min'})
-        shots = shots.merge(mins, on='player_id', how='left')
-
-        shots.to_sql('shots_playoffs_yr', con, if_exists='append', index=False)
+    shots.to_sql('shots_playoffs_yr', con, if_exists='append', index=False)
 
 con.commit()
 cursor.close()

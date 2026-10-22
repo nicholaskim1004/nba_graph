@@ -1,7 +1,7 @@
 import sqlite3
-import math
 import pandas as pd # type: ignore[import-not-found]
 import networkx as nx # type: ignore[import-not-found]
+import numpy as np
 
 from nba_api.stats.static import teams
 
@@ -105,11 +105,14 @@ for yr in years:
         proportion_shots = team_shots.iloc[:,5:].div(total_shots, axis=0)
         
         #creating a dataframe that stores the player_id and player_name from passes_yr df to ensure consistent naming
-        team_to_id_map = pd.DataFrame({'player_id':passes_yr['pass_to_id'].unique(), 'player_name': passes_yr['pass_to'].unique()})
-        
+        team_to_id_map = passes_yr[['pass_to_id', 'pass_to']].drop_duplicates('pass_to_id').rename(columns={'pass_to_id': 'player_id', 'pass_to': 'player_name'})  
+                  
         #merging in the correct player_name after tacking on the player_id
-        proportion_shots['player_id'] = shots_yr['player_id']
+        proportion_shots = proportion_shots.assign(player_id=team_shots['player_id'])        
         proportion_shots = pd.merge(proportion_shots, team_to_id_map, on='player_id', how='left')
+        
+        #removing junk or nan player_name rows
+        proportion_shots = proportion_shots.dropna(subset=['player_name'])
         
         #reorganzing df
         proportion_shots = proportion_shots.iloc[:,[8,7,0,1,2,3,4,5,6]]
@@ -133,9 +136,12 @@ for yr in years:
         for _,row in team_passes.iterrows():
             G.add_edge(row['player_name'],row['pass_to'], weight= 0.5 * row['proportion'])
            
-        pageranks = nx.pagerank(G, weight="weight").items()
-        
-        network_layout = nx.spring_layout(G)
+        try:
+            pageranks = nx.pagerank(G, weight='weight').items()
+        except nx.PowerIterationFailedConvergence:
+            print(f"FAILED: {team['full_name']} {yr}")
+            print([ (u,v,d) for u,v,d in G.edges(data=True) if not np.isfinite(d['weight'])][:5])
+            continue
         
         #converting pagerank to dataframe
         pageranks_df = pd.DataFrame(pageranks, columns=['node_name','pagerank'])
@@ -240,9 +246,7 @@ for yr in years:
             G.add_edge(row['player_name'],row['pass_to'], weight= 0.5 * row['proportion'])
            
         pageranks = nx.pagerank(G, weight="weight").items()
-        
-        network_layout = nx.spring_layout(G)
-        
+                
         #converting pagerank to dataframe
         pageranks_df = pd.DataFrame(pageranks, columns=['node_name','pagerank'])
         pageranks_df['season'] = str(yr)
