@@ -1,12 +1,5 @@
 import sqlite3
 import pandas as pd
-import numpy as np
-
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.neighbors import NearestNeighbors
-
-from nba_api.stats.static import players
 
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
