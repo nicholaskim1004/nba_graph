@@ -6,7 +6,7 @@ import sqlite3
 import pandas as pd # type: ignore[import-not-found]
 
 from nba_api.stats.static import teams
-from nba_api.stats.endpoints import leaguedashplayershotlocations, leaguestandings
+from nba_api.stats.endpoints import leaguedashplayershotlocations, leaguestandings, PlayerCareerStats
 
 #setting up database
 #connect to database
@@ -23,6 +23,7 @@ cursor.execute("""
                    player_id INTEGER,
                    player_name TEXT,
                    season TEXT,
+                   min INTEGER,
                    team_id INTEGER,
                    restricted_area_att INTEGER,
                    paint_att INTEGER,
@@ -63,6 +64,17 @@ for yr in years:
     
         #getting rid of nans in shot
         shots_yr_team.fillna(0,inplace=True)
+        
+        minuets = []
+        
+        #going through and pulling minutes played on each team in current season
+        for player in shots_yr_team['player_id'].unique():
+            print(player)
+            play_post_tot = PlayerCareerStats(player_id=player).season_totals_post_season.get_data_frame()
+            minuets.append(play_post_tot.loc[(play_post_tot['SEASON_ID']==yr)&(play_post_tot['TEAM_ID']==team_id),'MIN'])
+            time.sleep(1)
+            
+        shots_yr_team['min'] = minuets
         
         #saving to database        
         print(f'saving shots for {yr} {team} to database 🖨️')
