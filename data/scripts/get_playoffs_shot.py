@@ -47,7 +47,7 @@ for yr in years:
     standings_yr = leaguestandings.LeagueStandings(season=yr).get_data_frames()[0]
     playoff_teams = standings_yr.loc[standings_yr['PlayoffRank']<=8,['TeamID','TeamName']]
     
-    for team_id in team_df['id']:
+    for team_id in playoff_teams['TeamID']:
         
         team = playoff_teams.loc[playoff_teams['TeamID']==team_id,'TeamName'].item()
         
