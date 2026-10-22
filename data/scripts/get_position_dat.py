@@ -30,19 +30,24 @@ print('starting data pull')
 for i, row in unique_players.iterrows():
 
     print(f'progress: {(i+1)/N * 100}')
-    try:
-        playerid = row['player_id']
-        name = row['player_name']
+    while True:
+        #keep trying the pull the info for each player
+        #if it works break. if it doesn't try again
+        try:
+            playerid = row['player_id']
+            name = row['player_name']
+                
+            player_inf = CommonPlayerInfo(player_id=playerid).get_data_frames()[0]
             
-        player_inf = CommonPlayerInfo(player_id=playerid).get_data_frames()[0]
+            pos = player_inf['POSITION'].iloc[0]
+                
+            pd.DataFrame({'player_id': int(playerid), 'player_name': str(name), 'positions': str(pos)}, index=[0]).to_sql('positions', con, if_exists='append', index=False)
+            break
+        except Exception as e:
+            print(f'having issues with {name}: {e}') 
+            print('Trying again...')
+            time.sleep(30)
         
-        pos = player_inf['POSITION'].iloc[0]
-            
-        pd.DataFrame({'player_id': int(playerid), 'player_name': str(name), 'positions': str(pos)}, index=[0]).to_sql('positions', con, if_exists='append', index=False)
-
-    except Exception as e:
-        print(f'having issues with {name}: {e}') 
-    
     #avoid rate limit
     time.sleep(1)
     
