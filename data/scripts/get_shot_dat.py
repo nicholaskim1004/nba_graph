@@ -80,7 +80,7 @@ for yr in years:
         mins = stats[['PLAYER_ID', 'MIN']].rename(columns={'PLAYER_ID': 'player_id', 'MIN': 'min'})
         shots = shots.merge(mins, on='player_id', how='left')
 
-        shots.to_sql('shots_playoffs_yr', con, if_exists='append', index=False)
+        shots.to_sql('shots_yr', con, if_exists='append', index=False)
 
 con.commit()
 cursor.close()
