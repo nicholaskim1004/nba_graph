@@ -69,16 +69,18 @@ for yr in years:
         
         #going through and pulling minutes played on each team in current season
         for player in shots_yr_team['player_id'].unique():
-            print(player)
+            print(f'pulling min for {shots_yr_team.loc[shots_yr_team['player_id']==[player],'player_name'].item()}')
             play_post_tot = PlayerCareerStats(player_id=player).season_totals_post_season.get_data_frame()
             minuets.append(play_post_tot.loc[(play_post_tot['SEASON_ID']==yr)&(play_post_tot['TEAM_ID']==team_id),'MIN'])
             time.sleep(1)
             
         shots_yr_team['min'] = minuets
         
+        chunksize = shots_yr_team.shape(0)
+        
         #saving to database        
         print(f'saving shots for {yr} {team} to database 🖨️')
-        shots_yr_team.to_sql('shots_playoffs_yr', con, if_exists='append', index=False)
+        shots_yr_team.to_sql('shots_playoffs_yr', con, if_exists='append', index=False, chunksize=chunksize, method='multi')
         time.sleep(1)
         
 #close connection
