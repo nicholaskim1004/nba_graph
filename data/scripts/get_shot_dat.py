@@ -5,7 +5,7 @@ import time
 import sqlite3
 import pandas as pd
 
-from nba_api.stats.endpoints import leaguedashplayershotlocations, PlayerCareerStats
+from nba_api.stats.endpoints import leaguedashplayershotlocations, leaguestandings, leaguedashplayerstats
 from nba_api.stats.static import teams
 
 #setting up database
@@ -39,30 +39,49 @@ years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
 
 team_df = pd.DataFrame(teams.get_teams())
 
+def with_retry(fn, tries=4, wait=3):
+    """Retry NBA API calls with backoff since NBA.com is flaky."""
+    for i in range(tries):
+        try:
+            return fn()
+        except Exception as e:
+            print(f'  retry {i+1}/{tries} after error: {e!r}')
+            time.sleep(wait * (i + 1))
+    raise RuntimeError('API call failed after retries')
+
+
 #shots dataset
 for yr in years:
-    print(f'🏀 getting shots for {yr} ⛹️‍♂️')
-    
-    for team_id in team_df['id']:
-        team = team_df.loc[team_df['id']==team_id,'full_name'].item()
-        print(f'pulling for team: {team}')
-        shots_yr_team = leaguedashplayershotlocations.LeagueDashPlayerShotLocations(season=yr, season_type_all_star='Regular Season', team_id_nullable=team_id).get_data_frames()[0]
-        shots_yr_team = shots_yr_team.iloc[:,[0,1,2,7,10,13,16,19,22,25]]
-        shots_yr_team['season'] = yr
-        shots_yr_team = shots_yr_team.iloc[:,[0,1,10,2,3,4,5,6,7,8,9]]
-        shots_yr_team.columns = ['player_id','player_name','season','team_id','restricted_area_att','paint_att','mid_range_att','left_corner_att','right_corner_att','above_break_att','backcourt_att']
-    
-        #getting rid of nans in shot
-        shots_yr_team.fillna(0,inplace=True)
-        
-        #saving to database        
-        print(f'saving shots for {yr} {team} to database 🖨️')
-        shots_yr_team.to_sql('shots_yr', con, if_exists='append', index=False)
-        
-        time.sleep(1)
-    print(f'finished pulling for season {yr}...\n')
+    print(f'🏀 getting shots for {yr}')
 
-#close connection
-print("finished! 🔥")
+    for team_id, team in zip(team_df['id'], team_df['full_name']):
+        print(f'pulling for team {team}')
+
+        shots = with_retry(lambda: leaguedashplayershotlocations.LeagueDashPlayerShotLocations(
+            season=yr, season_type_all_star='Regular Season',
+            team_id_nullable=team_id, timeout=60).get_data_frames()[0])
+        time.sleep(1)
+
+        shots = shots.iloc[:, [0, 1, 2, 7, 10, 13, 16, 19, 22, 25]].copy()
+        shots['season'] = yr
+        shots = shots.iloc[:, [0, 1, 10, 2, 3, 4, 5, 6, 7, 8, 9]]
+        shots.columns = ['player_id','player_name','season','team_id','restricted_area_att',
+                         'paint_att','mid_range_att','left_corner_att','right_corner_att',
+                         'above_break_att','backcourt_att']
+        shots = shots.fillna(0)
+
+        # one call gets playoff minutes for every player on this team
+        stats = with_retry(lambda: leaguedashplayerstats.LeagueDashPlayerStats(
+            season=yr, season_type_all_star='Regular Season',
+            team_id_nullable=team_id, timeout=60).get_data_frames()[0])
+        time.sleep(1)
+
+        mins = stats[['PLAYER_ID', 'MIN']].rename(columns={'PLAYER_ID': 'player_id', 'MIN': 'min'})
+        shots = shots.merge(mins, on='player_id', how='left')
+
+        shots.to_sql('shots_playoffs_yr', con, if_exists='append', index=False)
+
+con.commit()
 cursor.close()
 con.close()
+print('finished pulling shots data! 🔥')
