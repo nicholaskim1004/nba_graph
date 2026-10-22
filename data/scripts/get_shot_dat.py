@@ -45,7 +45,8 @@ for yr in years:
     print(f'🏀 getting shots for {yr} ⛹️‍♂️')
     
     for team_id in team_df['id']:
-        print(f'pulling for team: {team_df.loc[team_df['id']==team_id,'full_name'].item()}')
+        team = team_df.loc[team_df['id']==team_id,'full_name'].item()
+        print(f'pulling for team: {team}')
         shots_yr_team = leaguedashplayershotlocations.LeagueDashPlayerShotLocations(season=yr, season_type_all_star='Regular Season', team_id_nullable=team_id).get_data_frames()[0]
         shots_yr_team = shots_yr_team.iloc[:,[0,1,2,7,10,13,16,19,22,25]]
         shots_yr_team['season'] = yr
@@ -56,7 +57,7 @@ for yr in years:
         shots_yr_team.fillna(0,inplace=True)
         
         #saving to database        
-        print(f'saving shots for {yr} to database 🖨️')
+        print(f'saving shots for {yr} {team} to database 🖨️')
         shots_yr_team.to_sql('shots_yr', con, if_exists='append', index=False)
         
         time.sleep(1)
