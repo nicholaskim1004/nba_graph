@@ -1,57 +1,55 @@
 import time
 import sqlite3
 import pandas as pd
-
 from nba_api.stats.endpoints import CommonPlayerInfo
 
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
 
-#drop pagerank table if it exists to avoid duplicates
 cursor.execute("DROP TABLE IF EXISTS positions")
 
-#set up table for storing position info for each player
 cursor.execute("""
-               CREATE TABLE IF NOT EXISTS positions
-               (
-                   player_id INTEGER,
-                   player_name TEXT,
-                   positions TEXT
-               )
-               """)
+    CREATE TABLE IF NOT EXISTS positions
+    (
+        player_id INTEGER, 
+        player_name TEXT,
+        positions TEXT
+        )
+""")
 
-query = "SELECT DISTINCT player_id, player_name FROM shots_yr"
-unique_players = pd.read_sql_query(query, con)
+con.commit()
 
+unique_players = pd.read_sql_query(
+    "SELECT DISTINCT player_id, player_name FROM shots_yr", con
+)
 N = len(unique_players)
 
-print('starting data pull')
+MAX_RETRIES = 5
+failed = []
 
 for i, row in unique_players.iterrows():
+    playerid = int(row['player_id'])
+    name = str(row['player_name'])
+    print(f'progress: {(i+1)/N*100:.1f}% ({name})')
 
-    print(f'progress: {(i+1)/N * 100}')
-    while True:
-        #keep trying the pull the info for each player
-        #if it works break. if it doesn't try again
+    for attempt in range(MAX_RETRIES):
         try:
-            playerid = row['player_id']
-            name = row['player_name']
-                
-            player_inf = CommonPlayerInfo(player_id=playerid).get_data_frames()[0]
-            
-            pos = player_inf['POSITION'].iloc[0]
-                
-            pd.DataFrame({'player_id': int(playerid), 'player_name': str(name), 'positions': str(pos)}, index=[0]).to_sql('positions', con, if_exists='append', index=False)
+            info = CommonPlayerInfo(player_id=playerid, timeout=60).get_data_frames()[0]
+            pos = str(info['POSITION'].iloc[0])
+            pd.DataFrame(
+                {'player_id': [playerid], 'player_name': [name], 'positions': [pos]}
+            ).to_sql('positions', con, if_exists='append', index=False)
             break
         except Exception as e:
-            print(f'having issues with {name}: {e}') 
-            print('Trying again...')
-            time.sleep(30)
-        
-    #avoid rate limit
-    time.sleep(1)
-    
-print('finished')
+            wait = min(10 * 2 ** attempt, 120)  # 10, 20, 40, 80, 120
+            print(f'  attempt {attempt+1}/{MAX_RETRIES} failed: {e}')
+            time.sleep(wait)
+    else:
+        print(f'  giving up on {name}')
+        failed.append((playerid, name))
 
+    time.sleep(1)
+
+print('finished. failed players:', failed)
 cursor.close()
 con.close()
