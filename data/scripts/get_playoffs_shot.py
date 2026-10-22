@@ -6,7 +6,7 @@ import sqlite3
 import pandas as pd # type: ignore[import-not-found]
 
 from nba_api.stats.static import teams
-from nba_api.stats.endpoints import leaguedashplayershotlocations, PlayerCareerStats, playerdashptpass
+from nba_api.stats.endpoints import leaguedashplayershotlocations, leaguestandings
 
 #setting up database
 #connect to database
@@ -39,13 +39,17 @@ years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
 
 team_df = pd.DataFrame(teams.get_teams())
 
+
 #shots dataset
 for yr in years:
     print(f'🏀 getting shots for {yr} ⛹️‍♂️')
     
+    standings_yr = leaguestandings.LeagueStandings(season=yr).get_data_frames()[0]
+    playoff_teams = standings_yr.loc[standings_yr['PlayoffRank']<=8,['TeamID','TeamName']]
+    
     for team_id in team_df['id']:
         
-        team = team_df.loc[team_df['id']==team_id,'full_name'].item()
+        team = playoff_teams.loc[playoff_teams['TeamID']==team_id,'TeamName'].item()
         
         print(f'pulling for team {team}')
         
