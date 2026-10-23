@@ -41,7 +41,7 @@ preprocessor = ColumnTransformer(
     ]
 )
 
-prof_df = prof_df[~prof_df['positions'].isna()]
+prof_df = prof_df.dropna(subset=features).reset_index(drop=True)
 
 X = preprocessor.fit_transform(prof_df[features])
 nn = NearestNeighbors(n_neighbors=6, metric='euclidean').fit(X)
