@@ -4,25 +4,6 @@ import sqlite3
 import pandas as pd
 from nba_api.stats.endpoints import CommonPlayerInfo
 
-USER_AGENTS = [
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
-    "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
-]
-
-def make_headers(ua):
-    return {
-        "User-Agent": ua,
-        "Referer": "https://www.nba.com/",
-        "Origin": "https://www.nba.com",
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "x-nba-stats-origin": "stats",
-        "x-nba-stats-token": "true",
-        "Connection": "keep-alive",
-    }
-
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
 
@@ -46,11 +27,9 @@ for i, row in unique_players.iterrows():
     print(f'progress: {(i+1)/N*100:.1f}% ({name})')
 
     for attempt in range(MAX_RETRIES):
-        ua = USER_AGENTS[attempt % len(USER_AGENTS)]  # new agent each retry
         try:
             info = CommonPlayerInfo(
                 player_id=playerid,
-                headers=make_headers(ua),
                 timeout=60,
             ).get_data_frames()[0]
             pos = str(info['POSITION'].iloc[0])
