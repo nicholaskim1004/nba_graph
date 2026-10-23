@@ -4,98 +4,78 @@ import pandas as pd # type: ignore[import-not-found]
 from nba_api.stats.static import teams
 from nba_api.stats.endpoints import playerdashptpass
 
-#function to convert playerdashptpass data to a dataframe of passes between teammates
-#stores the count & proportion of passes from each player to each teammate in the dataframe
-def get_team_pass_df(team_df, team_id, season, season_type='Playoffs'):
-    pass_row_inf = []
-    
-    pulled = {}
-    
-    for _, trow in team_df.iterrows():
-        while True:
-            try:
-                if trow['player_id'] in pulled.keys():
-                    print(f"Already pulled data for player {trow['player_name']}, skipping...")
-                    break
-                else:
-                    player_info = playerdashptpass.PlayerDashPtPass(team_id=team_id, player_id=int(trow['player_id']), season=season, season_type_all_star=season_type).get_data_frames()[0]
-                    #ensure the pass to player is teammate in dataframe
-                    player_info = player_info[player_info['PASS_TEAMMATE_PLAYER_ID'].isin(team_df['player_id'])]
-                    pulled[trow['player_id']] = True
-                    for _, row in player_info.iterrows():
-                        pass_row_inf.append({'player_id': row['PLAYER_ID'], 'player_name': row['PLAYER_NAME_LAST_FIRST'], 'pass_to_id': row['PASS_TEAMMATE_PLAYER_ID'], 'pass_to': row['PASS_TO'], 'count': row['PASS'], 'proportion': row['FREQUENCY']})
-                    break
-            except Exception as e:
-                print(f"Error occurred: {trow['player_name']}: {e}")
-                print("Retrying after 30 seconds...")
-                time.sleep(30)  # Sleep for 30 seconds to avoid rate limiting
-                break
+def pull_player(team_id, player_id, season, season_type, tries=4):
+    for i in range(tries):
+        try:
+            return playerdashptpass.PlayerDashPtPass(
+                team_id=team_id, player_id=player_id, season=season,
+                season_type_all_star=season_type, timeout=60
+            ).get_data_frames()[0]
+        except Exception as e:
+            print(f"  retry {i+1}/{tries} for player {player_id}: {e!r}")
+            time.sleep(10 * (i + 1))
+    return None
+
+def get_team_pass_df(team_shots, team_id, season, season_type='Playoffs'):
+    rows, failed = [], []
+    teammate_ids = set(team_shots['player_id'])
+
+    for _, trow in team_shots.iterrows():
+        info = pull_player(team_id, int(trow['player_id']), season, season_type)
         time.sleep(1)
-        
-    return pd.DataFrame(pass_row_inf)
-    
-#setting up database
-#connect to database
+        if info is None:
+            failed.append(trow['player_name'])
+            continue
+        info = info[info['PASS_TEAMMATE_PLAYER_ID'].isin(teammate_ids)]
+        for _, r in info.iterrows():
+            rows.append({'player_id': r['PLAYER_ID'], 'player_name': r['PLAYER_NAME_LAST_FIRST'],
+                         'pass_to_id': r['PASS_TEAMMATE_PLAYER_ID'], 'pass_to': r['PASS_TO'],
+                         'count': r['PASS'], 'proportion': r['FREQUENCY']})
+    return pd.DataFrame(rows), failed
+
 con = sqlite3.connect('data/nba.db')
 cursor = con.cursor()
 
-#drop passes table if it exists to avoid duplicates
-cursor.execute("DROP TABLE IF EXISTS passes_playoffs_yr")
-
-#set up table for storing pass proportions between teammates for each team 
+# no DROP TABLE: the script is resumable now
 cursor.execute("""
-               CREATE TABLE IF NOT EXISTS passes_playoffs_yr
-               (
-                   player_id INTEGER,
-                   player_name TEXT,
-                   season TEXT,
-                   team_id INTEGER,
-                   pass_to_id INTEGER,
-                   pass_to TEXT,
-                   count INTEGER,
-                   proportion REAL
-               )
-               """)
+    CREATE TABLE IF NOT EXISTS passes_playoffs_yr (
+        player_id INTEGER, player_name TEXT, season TEXT, team_id INTEGER,
+        pass_to_id INTEGER, pass_to TEXT, count INTEGER, proportion REAL)
+""")
+con.commit()
 
-#run on all years once its working for one year
+done = pd.read_sql_query("SELECT DISTINCT season, team_id FROM passes_playoffs_yr", con)
+done_set = set(zip(done['season'], done['team_id']))
+
 years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
-
-print("starting passes dataframe pull for playoffs 🏆")
-
 team_list = teams.get_teams()
+failed_teams = []
 
 for yr in years:
-    query = f"SELECT * FROM shots_playoffs_yr WHERE season = '{yr}'"
-    shots_yr_full = pd.read_sql_query(query, con)
-    
-    #filtering to only playoff teams for that year
-    playoff_ids = shots_yr_full['team_id'].unique()
-    
-    team_list_playoffs_yr = [team for team in team_list if team['id'] in playoff_ids]
-    
-    print(f'🏀 getting passes for {yr} ⛹️‍♂️')
-    for team in team_list_playoffs_yr:
-        team_id = team['id']
-        team_name = team['full_name']
-        print(f"Getting passes for {team_name} ({team_id}) in {yr} season...")
-        
-        shots_yr = shots_yr_full[(shots_yr_full['team_id']==team_id)&(shots_yr_full['season']==yr)]
-            
-        if shots_yr.empty:
-            print(f"No shot data found for {team_name} in {yr} season. Skipping...")
-            continue
-        
-        pass_df = get_team_pass_df(shots_yr, team_id, yr)
-        #add team_id and season columns to the pass_df
-        pass_df['team_id'] = int(team_id)
-        pass_df['season'] = str(yr)
-        
-        if not pass_df.empty:
-            pass_df.to_sql('passes_playoffs_yr', con, if_exists='append', index=False)
-            print(f"Pass data for {team_name} in {yr} season saved to database 💾")
-        else:
-            print(f"No pass data found for {team_name} in {yr} season")
-print("finished! 🔥")
+    shots_full = pd.read_sql_query("SELECT * FROM shots_playoffs_yr WHERE season = ?", con, params=(yr,))
+    playoff_ids = set(shots_full['team_id'])
+    print(f'🏀 getting passes for {yr}')
 
+    for team in [t for t in team_list if t['id'] in playoff_ids]:
+        tid, tname = team['id'], team['full_name']
+        if (yr, tid) in done_set:
+            print(f"{tname} {yr} already saved, skipping")
+            continue
+
+        team_shots = shots_full[shots_full['team_id'] == tid]
+        pass_df, failed = get_team_pass_df(team_shots, tid, yr)
+
+        if failed or pass_df.empty:
+            print(f"❌ {tname} {yr}: failed players {failed}, not saving so a rerun retries it")
+            failed_teams.append((yr, tname))
+            continue
+
+        pass_df['team_id'] = int(tid)
+        pass_df['season'] = yr
+        pass_df.to_sql('passes_playoffs_yr', con, if_exists='append', index=False)
+        print(f"💾 {tname} {yr} saved")
+
+print("finished! 🔥")
+print("Teams to retry:", failed_teams)
 cursor.close()
 con.close()
