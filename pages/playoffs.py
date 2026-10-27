@@ -41,7 +41,6 @@ team_df = pd.DataFrame(teams.get_teams())
 team_list = team_df['full_name'].to_numpy()
 
 seasons = pageranks_yr['season'].unique()
-print(len(seasons),seasons)
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
 
 #for playoff bracket
