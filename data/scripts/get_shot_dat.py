@@ -64,8 +64,11 @@ for yr in years:
         time.sleep(1)
 
         shots = shots.iloc[:, [0, 1, 2, 7, 10, 13, 16, 19, 22, 25]].copy()
+        
+        #using this team_id to trust
+        shots['team_id'] = team_id
         shots['season'] = yr
-        shots = shots.iloc[:, [0, 1, 10, 2, 3, 4, 5, 6, 7, 8, 9]]
+        shots = shots.iloc[:, [0, 1, 11, 10, 3, 4, 5, 6, 7, 8, 9]]
         shots.columns = ['player_id','player_name','season','team_id','restricted_area_att',
                          'paint_att','mid_range_att','left_corner_att','right_corner_att',
                          'above_break_att','backcourt_att']
@@ -79,7 +82,7 @@ for yr in years:
 
         mins = stats[['PLAYER_ID', 'MIN']].rename(columns={'PLAYER_ID': 'player_id', 'MIN': 'min'})
         shots = shots.merge(mins, on='player_id', how='left')
-
+        
         shots.to_sql('shots_yr', con, if_exists='append', index=False)
 
 con.commit()

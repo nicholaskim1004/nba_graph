@@ -199,16 +199,16 @@ layout = html.Div([
 def update_player_dropdown(season_index, team_value):
     if team_value == 'All':
         if season_index >= len(seasons):  # "All" option selected
-            options = prof_df['player_name_season'].unique()
+            options = prof_df['player_name_season'].sort_values(ascending=True).unique()
         else:
             selected_season = seasons[season_index]
-            options = prof_df[prof_df['season'] == selected_season]['player_name_season'].unique()
+            options = prof_df[prof_df['season'] == selected_season]['player_name_season'].sort_values(ascending=True).unique()
     else:
         if season_index >= len(seasons):  # "All" option selected
-            options = prof_df[prof_df['team_name'] == team_value]['player_name_season'].unique()
+            options = prof_df[prof_df['team_name'] == team_value]['player_name_season'].sort_values(ascending=True).unique()
         else:
             selected_season = seasons[season_index]
-            options = prof_df[(prof_df['season'] == selected_season) & (prof_df['team_name'] == team_value)]['player_name_season'].unique()
+            options = prof_df[(prof_df['season'] == selected_season) & (prof_df['team_name'] == team_value)]['player_name_season'].sort_values(ascending=True).unique()
     value = options[0] if len(options) > 0 else None
     return options, value
 
