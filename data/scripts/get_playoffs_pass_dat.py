@@ -44,8 +44,10 @@ cursor.execute("""
 """)
 con.commit()
 
-done = pd.read_sql_query("SELECT DISTINCT season, team_id FROM passes_playoffs_yr", con)
-done_set = set(zip(done['season'], done['team_id']))
+#will store the teams and players that already have info in a given season
+done = pd.read_sql_query(
+    "SELECT DISTINCT season, team_id, player_id FROM passes_playoffs_yr", con)
+done_set = set(zip(done['season'], done['team_id'], done['player_id']))
 
 years = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26']
 team_list = teams.get_teams()
@@ -63,7 +65,8 @@ for yr in years:
             continue
 
         team_shots = shots_full[shots_full['team_id'] == tid]
-        pass_df, failed = get_team_pass_df(team_shots, tid, yr)
+        todo = team_shots[~team_shots['player_id'].apply(lambda p: (yr, tid, p) in done_set)]
+        pass_df, failed = get_team_pass_df(todo, tid, yr)
 
         if failed or pass_df.empty:
             print(f"❌ {tname} {yr}: failed players {failed}, not saving so a rerun retries it")
