@@ -292,8 +292,6 @@ def update_traded_diff(choice):
     if len(rows) < 2:
         return [], [], [], hidden
 
-    rows = rows.iloc[::-1].reset_index(drop=True)          # sort by a date/games column first if you have one
-
     columns = [{'name': 'Feature', 'id': 'feature'}]
     data = [{'feature': f} for f in diff_features]
     styles = []
