@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.neighbors import NearestNeighbors
 
 from nba_api.stats.static import teams
+from nba_api.stats.endpoints import playergamelog
 
 import plotly.graph_objects as go
 import plotly.express as px
@@ -298,7 +299,27 @@ def update_traded_diff(choice):
     
     start, _ = rows.index
     
-    old = player_df.iloc[start-1,:]
+    #if the start is 0 then getting the team they started with by looking at the exact gamelog for the year
+    if start == 0:
+        playid = player_df.loc[0,'player_id'].item
+        season_gamelog = playergamelog.PlayerGameLog(player_id=playid,season=season).get_data_frames()[0]
+        start_season = season_gamelog.sort_values(by='GAME_DATE',ascending=False).head()
+        team_split = [start_season['MATCHUP'].to_list()[i].split(' ') for i in range(len(start_season))]
+        seen_teams = {}
+
+        for i in range(len(start_season)):
+            row = team_split[i]
+            for j in range(0,len(row),2):
+                if row[j] in seen_teams:
+                    seen_teams[row[j]] = seen_teams.get(row[j],0) + 1
+                else:
+                    seen_teams[row[j]] = 1
+
+        old_team_abbr = max(seen_teams, key=seen_teams.get)
+    
+        old = player_df[player_df['team_abbr']==old_team_abbr]
+    else:
+        old = player_df.iloc[start-1,:]
     
     traded_team = rows['team_id'] != old['team_id']
     
