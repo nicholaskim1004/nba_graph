@@ -284,7 +284,11 @@ def update_traded_diff(choice):
 
     name, season = choice.split(' (')
     season = season[:-1]
-    rows = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
+    
+    player_df = prof_df[prof_df['player_name'] == name].reset_index()
+    
+    rows = player_df[player_df['season'] == season]
+    
     if len(rows) < 2:
         return [], [], [], hidden
 
@@ -293,9 +297,19 @@ def update_traded_diff(choice):
     columns = [{'name': 'Feature', 'id': 'feature'}]
     data = [{'feature': f} for f in diff_features]
     styles = []
+    
+    start, _ = rows.index
+    
+    old = player_df.iloc[start-1,:]
+    
+    traded_team = rows['team_id'] != old['team_id']
+    
+    new_index = traded_team[traded_team].index[0]
+    
+    new = rows.loc[new_index,:] 
 
     for k in range(1, len(rows)):
-        new, old = rows.iloc[k], rows.iloc[k - 1] 
+        
         cid = f'd{k}'
         columns.append({'name': f'{old["team_abbr"]} → {new["team_abbr"]}', 'id': cid})
         for rec, f in zip(data, diff_features):
