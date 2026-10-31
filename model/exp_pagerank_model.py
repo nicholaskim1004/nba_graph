@@ -17,6 +17,9 @@ pageranks = pd.read_sql_query(query_page, con)
 query_avd = 'SELECT * FROM avdstats_yr'
 avdstats_yr = pd.read_sql_query(query_avd, con)
 
+query_shot = 'SELECT * FROM shots_yr'
+shots_yr = pd.read_sql_query(query_shot, con)
+
 #drop table if it exists to avoid duplicates
 cursor.execute("DROP TABLE IF EXISTS expected_pagerank_yr")
 
@@ -47,6 +50,8 @@ seasons = pageranks['season'].unique()
 team_df = pd.DataFrame(teams.get_teams())
 
 diff_shots = ['Restricted Area', 'In The Paint (Non-RA)', 'Mid-Range', 'Left Corner 3', 'Right Corner 3', 'Above the Break 3', 'Backcourt']
+
+avdstats_yr = pd.merge(avdstats_yr,shots_yr.loc[:,['player_id','season','min']], on=['player_id','season'], how='left')
 
 print('standarizing position naming conventions')
 #standarizing naming convention for some 
@@ -82,7 +87,7 @@ print('mergining data with advanced stats')
 pageranks_players = pd.merge(pageranks_players.loc[:,['season','team_id','node_name','player_id','pagerank']],pos.loc[:,['player_id','positions']], on='player_id', how='left')
 
 #merging avd stats to pos df
-pageranks_avd_players = pd.merge(pageranks_players, avdstats_yr.loc[:,['season','team_id','player_id','PIE_SHARE']], on=['player_id','season','team_id'], how='left')
+pageranks_avd_players = pd.merge(pageranks_players, avdstats_yr.loc[:,['season','team_id','player_id','min','PIE_SHARE']], on=['player_id','season','team_id'], how='left')
 
 # drop rows with missing target/predictors up front so train/test are clean
 model_data = pageranks_avd_players.dropna(subset=['pagerank', 'PIE_SHARE', 'positions']).copy()
@@ -92,7 +97,7 @@ train_df, test_df = train_test_split(model_data, test_size=0.2, random_state=42)
 print('fitting model')
 # fit on train only
 model = smf.ols(
-    'pagerank ~ PIE_SHARE + C(positions)',
+    'pagerank ~ PIE_SHARE*min + C(positions)',
     data=train_df
 ).fit()
 
