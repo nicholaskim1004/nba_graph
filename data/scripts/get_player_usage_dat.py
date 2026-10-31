@@ -171,8 +171,8 @@ for yr in years:
                             })
     
     usage_yr['gini_rank'] = usage_yr['gini'].rank().rank(method='min').astype(int)
-    usage_yr['entropy_rank'] = usage_yr['entropy'].rank().rank(method='min').astype(int)
-    usage_yr['eff_num_players_rank'] = usage_yr['eff_num_players'].rank().rank(method='min').astype(int)
+    usage_yr['entropy_rank'] = usage_yr['entropy'].rank().rank(method='min', ascending=False).astype(int)
+    usage_yr['eff_num_players_rank'] = usage_yr['eff_num_players'].rank().rank(method='min', ascending=False).astype(int)
     
     usage_yr.to_sql('player_usage_yr_playoff',con=con, if_exists='append', index=False, chunksize=usage_yr.shape[0])
     print(f'finished for {yr} season')

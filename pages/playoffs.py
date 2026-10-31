@@ -350,7 +350,7 @@ layout = html.Div([
                 id='player_usage_table_play',
                 data=[],
                 columns=[{'name': i, 'id': i}
-                        for i in ['season','gini','entropy','eff_num_players']]
+                        for i in ['season','gini', 'gini_rank', 'entropy', 'entropy_rank', 'eff_num_players', 'eff_num_players_rank']]
             )
         ]
     ),
@@ -636,7 +636,7 @@ def update_reg_v_play_fig(selected_team, selected_season):
 
     fig.update_layout(
         coloraxis_colorbar=dict(title='Normalized diff'),
-        height=max(400, 25 * len(row_labels))
+        height=max(800, 25 * len(row_labels))
     )
     
     row_labels_list = list(row_labels)
