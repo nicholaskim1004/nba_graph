@@ -121,11 +121,31 @@ prof_df['player_name_season'] = prof_df['player_name'] + ' (' + prof_df['season'
 dash.register_page(__name__, path='/player_profiles', name='Player Profiles', order = 4)
 
 layout = html.Div([
-    html.Label('Choice:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
-    dcc.Dropdown(id='player_profile_choice',
-                options=prof_df['player_name_season'].unique(),
-                value=prof_df['player_name_season'].unique()[0],
-                style={"fontFamily": 'sans-serif','width': '20%'}),
+    html.Div(
+        style={'display': 'flex', 'justify-content': 'space-between', 'width': '100%'},
+        children=[
+            html.Div(
+                style={'width': '20%'},
+                children=[
+                    html.Label('Choice:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
+                    dcc.Dropdown(id='player_profile_choice',
+                                options=prof_df['player_name_season'].unique(),
+                                value=prof_df['player_name_season'].unique()[0],
+                                style={"fontFamily": 'sans-serif'})
+                    ]
+            ),
+            html.Div(
+                style={'width':'20%'},
+                children=[
+                    html.Label('+ Compare with:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
+                    dcc.Dropdown(id='compare-choice',
+                                options=prof_df['player_name_season'].unique(),
+                                value="None",
+                                style={"fontFamily": 'sans-serif'})
+                ]
+            )
+        ]
+    ),
     html.Br(),
     html.Div(style={
         'display': 'flex',
@@ -187,17 +207,20 @@ layout = html.Div([
         columns=[{"name": i, "id": i} for i in ['player_name','season','team_name','distance']],
         style_cell={'textAlign': 'left', "fontFamily": 'sans-serif'},
         style_header={'fontWeight': 'bold'},
-        data = [])
+        data = []),
 ])
 
 #change the player dropdown based on the season selected in the season slider & team dropdown based on the season selected in the season slider
 @callback(
     Output("player_profile_choice", "options"),
     Output("player_profile_choice", "value"),
+    Output("compare-choice", "options"),
+    Output("compare-choice", "value"),
     Input("season-slider", "value"),
-    Input("team-dropdown", "value")
+    Input("team-dropdown", "value"),
+    State('compare-choice', 'value')
 )
-def update_player_dropdown(season_index, team_value):
+def update_player_dropdown(season_index, team_value, current_compare):
     if team_value == 'All':
         if season_index >= len(seasons):  # "All" option selected
             options = prof_df['player_name_season'].sort_values(ascending=True).unique()
@@ -211,7 +234,16 @@ def update_player_dropdown(season_index, team_value):
             selected_season = seasons[season_index]
             options = prof_df[(prof_df['season'] == selected_season) & (prof_df['team_name'] == team_value)]['player_name_season'].sort_values(ascending=True).unique()
     value = options[0] if len(options) > 0 else None
-    return options, value
+    
+    
+    compare_options = [{'label': 'None', 'value': "None"}]
+    compare_options += [{'label': o, 'value': o} for o in options if o != value]
+    
+    compare_value = "None"
+    valid_values = {o['value'] for o in compare_options}
+    new_value = current_compare if current_compare in valid_values else "None"
+    
+    return options, value, compare_options, compare_value
 
 #building the player profile graph based on the player selected in the dropdown and the similar players selected in the table
 @callback(
