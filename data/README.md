@@ -54,7 +54,6 @@ stores avdanced metrics for each player in a given season
 | team_id | unique id for team (one that player ended year at) | 
 | player_id | unique id for player (one where passes originate from) |
 | player_name | player's full name (last, first) |
-| TOTAL_MIN | total minutes played in a season | 
 | PIE | Player Impact Estimate, metric to capture how valuable a player is | 
 | PIE_SHARE | proportion of PIE a player takes up in their team |
 | TS | True Shooting, metric to capture a player's efficeny in all 3 shots in the game (2, 3, free-throw) |
