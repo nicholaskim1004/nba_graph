@@ -301,9 +301,9 @@ def update_traded_diff(choice):
     
     #if the start is 0 then getting the team they started with by looking at the exact gamelog for the year
     if start == 0:
-        playid = player_df.loc[0,'player_id'].item
+        playid = player_df.loc[0,'player_id']
         season_gamelog = playergamelog.PlayerGameLog(player_id=playid,season=season).get_data_frames()[0]
-        start_season = season_gamelog.sort_values(by='GAME_DATE',ascending=False).head()
+        start_season = season_gamelog.tail()
         team_split = [start_season['MATCHUP'].to_list()[i].split(' ') for i in range(len(start_season))]
         seen_teams = {}
 
@@ -316,11 +316,11 @@ def update_traded_diff(choice):
                     seen_teams[row[j]] = 1
 
         old_team_abbr = max(seen_teams, key=seen_teams.get)
-    
-        old = player_df[player_df['team_abbr']==old_team_abbr]
+        
+        old = player_df[player_df['team_abbr']==old_team_abbr].iloc[0,:]
     else:
         old = player_df.iloc[start-1,:]
-    
+
     traded_team = rows['team_id'] != old['team_id']
     
     new_index = traded_team[traded_team].index[0]
@@ -334,9 +334,9 @@ def update_traded_diff(choice):
         for rec, f in zip(data, diff_features):
             rec[cid] = round(float(new[f] - old[f]), 3)
         styles += [
-            {'if': {'filter_query': f'{{{cid}}} < 0', 'column_id': cid},
-             'backgroundColor': '#f8b4b4', 'color': '#7a1212'},
             {'if': {'filter_query': f'{{{cid}}} > 0', 'column_id': cid},
+             'backgroundColor': '#f8b4b4', 'color': '#7a1212'},
+            {'if': {'filter_query': f'{{{cid}}} < 0', 'column_id': cid},
              'backgroundColor': '#b4cdf8', 'color': '#12307a'},
         ]
 
