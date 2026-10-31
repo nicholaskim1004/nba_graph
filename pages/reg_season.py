@@ -157,7 +157,7 @@ layout = html.Div([
             dash_table.DataTable(
                 id='player_usage_table',
                 data=[],
-                columns=[{'name': i, 'id': i} for i in ['season', 'gini', 'entropy', 'eff_num_players']],
+                columns=[{'name': i, 'id': i} for i in ['season', 'gini', 'gini_rank', 'entropy', 'entropy_rank', 'eff_num_players', 'eff_num_players_rank']],
                 style_cell={'fontFamily': 'sans-serif', 'textAlign': 'center'},
                 style_header={'fontWeight': 'bold'},
             ),

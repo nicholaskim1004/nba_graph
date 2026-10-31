@@ -17,8 +17,11 @@ cursor.execute("""
                    season TEXT,
                    team_id INTEGER,
                    gini REAL,
+                   gini_rank INTEGER,
                    entropy REAL,
-                   eff_num_players REAL
+                   entropy_rank INTEGER,
+                   eff_num_players REAL,
+                   eff_num_players_rank INTEGER
                )
                """)
 
@@ -32,8 +35,11 @@ cursor.execute("""
                    season TEXT,
                    team_id INTEGER,
                    gini REAL,
+                   gini_rank INTEGER,
                    entropy REAL,
-                   eff_num_players REAL
+                   entropy_rank INTEGER,
+                   eff_num_players REAL,
+                   eff_num_players_rank INTEGER
                )
                """)
 
@@ -73,8 +79,14 @@ def normalized_entropy(p):
 ##regular season
 print(f"starting data pull for Regular Season ✅")
 
+
 for yr in years:
     print(f'getting data for {yr} season')
+    
+    teamids = []
+    ginis = []
+    entropies = []
+    eff_num_players_list = []
     
     for team in team_list:
         print(f'getting player usage inf on {team['full_name']}')
@@ -96,14 +108,25 @@ for yr in years:
         entropy = normalized_entropy(p)
         eff_num_players = (1/np.sum(p**2))/len(p)
         
-        pd.DataFrame({'season': str(yr), 
-                      'team_id': int(teamid),
-                      'gini': gini,
-                      'entropy': entropy,
-                      'eff_num_players': eff_num_players
-                      }, index=[0]).to_sql('player_usage_yr', con, if_exists='append', index=False)
+        teamids.append(teamid)
+        ginis.append(gini)
+        entropies.append(entropy)
+        eff_num_players_list.append(eff_num_players)
         
-        print(f'saving data {team['full_name']} in {yr} to database 🕺')
+        print(f'saving data for {teamid} in {yr} 🕺')
+    
+    usage_yr = pd.DataFrame({'season': str(yr), 
+                          'team_id': teamids,
+                          'gini': ginis,
+                          'entropy': entropies,
+                          'eff_num_players': eff_num_players_list
+                          })
+    
+    usage_yr['gini_rank'] = usage_yr['gini'].rank().rank(method='min').astype(int)
+    usage_yr['entropy_rank'] = usage_yr['entropy'].rank().rank(method='min').astype(int)
+    usage_yr['eff_num_players_rank'] = usage_yr['eff_num_players'].rank().rank(method='min').astype(int)
+    
+    usage_yr.to_sql('player_usage_yr',con=con, if_exists='append', index=False,chunksize=usage_yr.shape[0])
     print(f'finished saving info for season {yr}...')
 
 ## Playoffs
@@ -111,6 +134,11 @@ print('starting pull for playoffs 🏆')
 
 for yr in years:
     teams_in_play = pageranks_yr_play[pageranks_yr_play['season']==yr].loc[:,'team_id'].unique()
+    
+    teamids = []
+    ginis = []
+    entropies = []
+    eff_num_players_list = []
     
     for teamid in teams_in_play:
         pageranks_yr_play_players = pageranks_yr_play[
@@ -128,13 +156,25 @@ for yr in years:
         entropy = normalized_entropy(p)
         eff_num_players = (1/np.sum(p**2))/len(p)
         
-        pd.DataFrame({'season': str(yr), 
-                      'team_id': int(teamid),
-                      'gini': gini,
-                      'entropy': entropy,
-                      'eff_num_players': eff_num_players
-                      }, index=[0]).to_sql('player_usage_yr_playoff', con, if_exists='append', index=False)
-        print(f'saving data {teamid} in {yr} to database 🕺')
+        teamids.append(teamid)
+        ginis.append(gini)
+        entropies.append(entropy)
+        eff_num_players_list.append(eff_num_players)
+        
+        print(f'saving data for {teamid} in {yr} 🕺')
+            
+    usage_yr = pd.DataFrame({'season': str(yr), 
+                            'team_id': teamids,
+                            'gini': ginis,
+                            'entropy': entropies,
+                            'eff_num_players': eff_num_players_list
+                            })
+    
+    usage_yr['gini_rank'] = usage_yr['gini'].rank().rank(method='min').astype(int)
+    usage_yr['entropy_rank'] = usage_yr['entropy'].rank().rank(method='min').astype(int)
+    usage_yr['eff_num_players_rank'] = usage_yr['eff_num_players'].rank().rank(method='min').astype(int)
+    
+    usage_yr.to_sql('player_usage_yr_playoff',con=con, if_exists='append', index=False, chunksize=usage_yr.shape[0])
     print(f'finished for {yr} season')
 
 print('finished ')
