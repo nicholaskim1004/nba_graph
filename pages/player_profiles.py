@@ -155,24 +155,6 @@ layout = html.Div([
     },
         children=[
             html.Div(
-                children = [dcc.Graph(id='player_profile_graph', style={'height': '600px','width': '900px'}),
-
-                html.Div(
-                id='traded_diff_container',
-                style={'display': 'none'},
-                children=[
-                    html.H5("Change after trade", style={'fontFamily': 'sans-serif'}),
-                    dash_table.DataTable(
-                        id='traded_diff_table',
-                        columns=[],
-                        data=[],
-                        style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
-                        style_header={'fontWeight': 'bold'},
-                    ),
-                ],
-                )]
-            ),
-            html.Div(
                 children=[
                     html.Img(
                         id='player-profile-image',
@@ -194,7 +176,25 @@ layout = html.Div([
                         data=[],
                     )],
             style={'flex': '1 1 25%', 'minWidth': 0},
-        )]
+        ),   html.Div(
+                children = [dcc.Graph(id='player_profile_graph', style={'height': '600px','width': '900px'}),
+
+                html.Div(
+                id='traded_diff_container',
+                style={'display': 'none'},
+                children=[
+                    html.H5("Change after trade", style={'fontFamily': 'sans-serif'}),
+                    dash_table.DataTable(
+                        id='traded_diff_table',
+                        columns=[],
+                        data=[],
+                        style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
+                        style_header={'fontWeight': 'bold'},
+                    ),
+                ],
+                )]
+            )
+        ]
     ),
     html.Br(),
     html.Label('Similar Players:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
