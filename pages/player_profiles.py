@@ -284,8 +284,6 @@ def update_player_profile_graph(choice, compare_choice, active_cell, team_value,
     player_name, season = choice.split(' (')
     season = season[:-1]
     
-    compared_player, _ = compare_choice.split(' (')
-    
     #if team is All and player traded us the mean otherwise use team specific
     if team_value == 'All':
         main = profile_vector(player_name, season)
@@ -306,6 +304,7 @@ def update_player_profile_graph(choice, compare_choice, active_cell, team_value,
     
     #add compared player to graph
     if compare_choice != "None":
+        compared_player, _ = compare_choice.split(' (')
         other = profile_vector(compared_player, season, team_value)
         if other is not None:
             traces.append(profile_vector((f"{compared_player} ({season})", other)))
