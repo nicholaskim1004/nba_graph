@@ -193,7 +193,30 @@ layout = html.Div([
                     ),
                 ],
                 )]
-            )
+            ),
+            html.Div(
+                    children=[
+                        html.Img(
+                            id='compare-player-image',
+                            src='',
+                            style={
+                                'width': '100%',
+                                'height': 'auto',
+                                'objectFit': 'contain'
+                            }
+                        ),
+                        dash_table.DataTable(
+                            id='compare-player-table',
+                            columns=[
+                                {"name": "Feature", "id": "feature"},
+                                {"name": "Value", "id": "value"}
+                            ],
+                            style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
+                            style_header={'fontWeight': 'bold'},
+                            data=[],
+                        )],
+                style={'flex': '1 1 25%', 'minWidth': 0, 'display': 'none'},
+                )
         ]
     ),
     html.Br(),
@@ -250,23 +273,28 @@ def update_player_dropdown(season_index, team_value, current_compare):
     Output('player_profile_graph', 'figure'),
     Input('player_profile_choice', 'value'),
     Input('similar_players_table', 'active_cell'),
+    Input('compare-choice', 'value'),
     Input('team-dropdown', 'value'),
     State('similar_players_table', 'data'),
 )
-def update_player_profile_graph(choice, active_cell, team_value, table_data):
+def update_player_profile_graph(choice, compare_choice, active_cell, team_value, table_data):
     if not choice:
         return go.Figure()
+    
     player_name, season = choice.split(' (')
     season = season[:-1]
-
+    
+    compared_player, _ = compare_choice.split(' (')
+    
     #if team is All and player traded us the mean otherwise use team specific
     if team_value == 'All':
         main = profile_vector(player_name, season)
     else:
         main = profile_vector(player_name, season, team_value)
-    
+
     if main is None:
         return go.Figure()
+
     traces = [(f"{player_name} ({season})", main)]
 
     # only add the comparison if the click came from the table, not a player change
@@ -275,6 +303,12 @@ def update_player_profile_graph(choice, active_cell, team_value, table_data):
         other = profile_vector(row['player_name'], row['season'], row['team_name'])
         if other is not None:
             traces.append((f"{row['player_name']} ({row['season']})", other))
+    
+    #add compared player to graph
+    if compare_choice != "None":
+        other = profile_vector(compared_player, season, team_value)
+        if other is not None:
+            traces.append(profile_vector((f"{compared_player} ({season})", other)))
 
     return build_radar(traces, f"{player_name} Player Profile")
 
