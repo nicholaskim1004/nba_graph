@@ -272,8 +272,8 @@ def update_player_dropdown(season_index, team_value, current_compare):
 @callback(
     Output('player_profile_graph', 'figure'),
     Input('player_profile_choice', 'value'),
-    Input('similar_players_table', 'active_cell'),
     Input('compare-choice', 'value'),
+    Input('similar_players_table', 'active_cell'),
     Input('team-dropdown', 'value'),
     State('similar_players_table', 'data'),
 )
