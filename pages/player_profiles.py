@@ -317,21 +317,36 @@ def update_player_profile_graph(choice, compare_choice, active_cell, team_value,
 
 @callback(
     Output('player_profile_table', 'data'),
+    Output('compare-player-table', 'data'),
     Input('player_profile_choice', 'value'),
+    Input('compare-choice', 'value'),
     Input('team-dropdown', 'value')
 )
-def update_player_profile_table(choice, team_value):
+def update_player_profile_table(choice, compare_choice, team_value):
     team = None if team_value == 'All' else team_value
     _, player_prof = get_player_profile(choice, team)
+    _,compare_prof = get_player_profile(compare_choice, team)
+    
     if player_prof.empty:
         return []
+    if compare_prof.empty:
+        return []
+    
     row = player_prof.iloc[0]
+    compare_row = compare_prof.iloc[0]
+    
     data = [{"feature": "team", "value": team_label(choice, team)}]
     data += [
         {"feature": f, "value": row[f] if f == 'positions' else round(float(row[f]), 3)}
         for f in features
     ]
-    return data
+    
+    compare_data = [{"feature": "team", "value": team_label(choice, team)}]
+    compare_data += [
+        {"feature": f, "value": row[f] if f == 'positions' else round(float(row[f]), 3)}
+        for f in features
+    ]
+    return data, compare_data
 
 #creating table with differences for traded players
 diff_features = features[1:]
@@ -427,14 +442,25 @@ def update_similar_players_table(choice, num_similar):
 #showing correct player image based on the player selected in the dropdown
 @callback(
     Output('player-profile-image', 'src'),
-    Input('player_profile_choice', 'value')
+    Output('compare-player-image', 'src'),
+    Input('player_profile_choice', 'value'),
+    Input('compare-choice', 'value')
 )
-def update_player_image(choice):    
+def update_player_image(choice, compare_choice):    
     player_name, _ = choice.split(' (')
+    
+    compare_name, _ = compare_choice.split(' (')
     
     player_prof = prof_df[prof_df['player_name'] == player_name]
     if player_prof.empty:
         return ''
     player_id = player_prof.iloc[0]['player_id']
     image_url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{player_id}.png"
-    return image_url
+    
+    compare_prof = prof_df[prof_df['player_name'] == compare_name]
+    if compare_prof.empty:
+        return ''
+    compare_id = compare_prof.iloc[0]['player_id']
+    compare_url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{compare_id}.png"
+    
+    return image_url, compare_url
