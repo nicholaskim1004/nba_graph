@@ -1,13 +1,11 @@
 import sqlite3
 import pandas as pd
 import numpy as np
-import time 
 
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 from nba_api.stats.static import teams
-from nba_api.stats.endpoints import playergamelog
 
 import plotly.graph_objects as go
 
@@ -19,6 +17,7 @@ con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
 
 prof_df = pd.read_sql_query("SELECT * FROM player_profiles", con)
+traded_inf = pd.read_sql_query("SELECT * FROM traded_inf_yr", con)
 
 teams_nba = pd.DataFrame(teams.get_teams())
 seasons = prof_df['season'].unique()
@@ -164,41 +163,19 @@ def traded_diff(choice, comp=False):
 
     name, season = parse_choice(choice)
     player_df = prof_df[prof_df['player_name'] == name].reset_index()
-    rows = player_df[player_df['season'] == season]
-    if len(rows) < 2:
-        return empty
+    playid = player_df.loc[0, 'player_id']
+    
+    player_traded = traded_inf[(traded_inf['player_id']==playid)&(traded_inf['season']==season)]
 
-    start = rows.index[0]
-
-    # no earlier row to compare against: find the starting team from the first games of the season
-    if start == 0:
-        playid = player_df.loc[0, 'player_id']
-        time.sleep(1)
-        gamelog = playergamelog.PlayerGameLog(player_id=playid, season=season,timeout=60).get_data_frames()[0]
-        if gamelog.empty:
-            return empty
-        # gamelog is newest-first, so tail() is the earliest games.
-        # MATCHUP is "LAL vs. BOS" / "LAL @ BOS": the first token is the player's own team
-        old_team_abbr = gamelog.tail()['MATCHUP'].str.split(' ').str[0].mode().iloc[0]
-        old_rows = player_df[player_df['team_abbr'] == old_team_abbr]
-        if old_rows.empty:
-            return empty
-        old = old_rows.iloc[0]
-    else:
-        old = player_df.iloc[start - 1]
-
-    new_rows = rows[rows['team_id'] != old['team_id']]
-    if new_rows.empty:
-        return empty
-    new = new_rows.iloc[0]
-
+    new, old = player_traded['new_team_abbr'], player_traded['old_team_abbr']
+    
     data = [
         {'feature': f, 'diff': round(float(new[f] - old[f]), 3)}
         for f in diff_features
     ]
     columns = [
         {'name': 'Feature', 'id': 'feature'},
-        {'name': f'{old["team_abbr"]} → {new["team_abbr"]}', 'id': 'diff'},
+        {'name': f'{old} → {new}', 'id': 'diff'},
     ]
     styles = [
         {'if': {'filter_query': '{diff} > 0', 'column_id': 'diff'},
