@@ -246,12 +246,31 @@ layout = html.Div([
                  value=5,
                  style={'fontFamily': 'sans-serif', 'width': '10%'}),
     html.Br(),
-    dash_table.DataTable(
-        id='similar_players_table',
-        columns=[{'name': i, 'id': i} for i in ['player_name', 'season', 'team_name', 'distance']],
-        style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif'},
-        style_header={'fontWeight': 'bold'},
-        data=[]),
+    html.Div(
+    children=[
+        dash_table.DataTable(
+            id='similar_players_table',
+            columns=[{'name': i, 'id': i} for i in ['player_name', 'season', 'team_name', 'distance']],
+            style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif'},
+            style_header={'fontWeight': 'bold'},
+            data=[]),
+        
+        #RIGHT table for compare player if chosen
+        html.Div(
+            id = 'sim_table_comparison',
+            children = [
+                dash_table.DataTable(
+                    id='similar_players_table_comparison',
+                    columns=[{'name': i, 'id': i} for i in ['player_name', 'season', 'team_name', 'distance']],
+                    style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif'},
+                    style_header={'fontWeight': 'bold'},
+                    data=[])
+                ],
+            style = SIDE_HIDDEN_STYLE
+            )
+        ],
+    style={'display': 'flex', 'flexDirection': 'row', 'alignItems': 'flex-start','gap': '20px', 'width': '100%'}
+    )
 ])
 
 
