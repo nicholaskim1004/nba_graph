@@ -322,6 +322,7 @@ def update_compare_dropdown(choice, season_index, current_compare):
     Input('similar_players_table', 'active_cell'),
     Input('team-dropdown', 'value'),
     State('similar_players_table', 'data'),
+    State('similar_players_table_comparison', 'data')
 )
 def update_player_profile_graph(choice, compare_choice, active_cell, team_value, table_data):
     if not choice:
@@ -335,6 +336,14 @@ def update_player_profile_graph(choice, compare_choice, active_cell, team_value,
 
     # only add the similar-player trace if the click came from the table
     if active_cell and table_data and ctx.triggered_id == 'similar_players_table':
+        row = table_data[active_cell['row']]
+        label = f"{row['player_name']} ({row['season']})"
+        other = profile_vector(label, row['team_name'])
+        if other is not None:
+            traces.append((label, other))
+    
+    #same for the comparison player similar table    
+    if active_cell and table_data and ctx.triggered_id == 'similar_players_table_comparison':
         row = table_data[active_cell['row']]
         label = f"{row['player_name']} ({row['season']})"
         other = profile_vector(label, row['team_name'])
@@ -458,6 +467,9 @@ def update_similar_players_table(choice, compare_choice, num_similar):
 
     name, season = parse_choice(choice)
     player_prof = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
+    
+    if compare_choice == "None":
+        return [], None, [], None, SIDE_HIDDEN_STYLE
     
     compare_name, season_compare = parse_choice(compare_choice)
     compare_prof = prof_df[(prof_df['player_name'] == compare_name) & (prof_df['season'] == season_compare)]
