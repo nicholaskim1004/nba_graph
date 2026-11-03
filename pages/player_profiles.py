@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd
 import numpy as np
+import time 
 
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -172,7 +173,8 @@ def traded_diff(choice, comp=False):
     # no earlier row to compare against: find the starting team from the first games of the season
     if start == 0:
         playid = player_df.loc[0, 'player_id']
-        gamelog = playergamelog.PlayerGameLog(player_id=playid, season=season).get_data_frames()[0]
+        time.sleep(1)
+        gamelog = playergamelog.PlayerGameLog(player_id=playid, season=season,timeout=60).get_data_frames()[0]
         if gamelog.empty:
             return empty
         # gamelog is newest-first, so tail() is the earliest games.
