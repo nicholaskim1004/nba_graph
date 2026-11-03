@@ -134,6 +134,17 @@ def build_radar(traces, title):
                       polar=dict(radialaxis=dict(range=[0, 1], visible=True)))
     return fig
 
+#find similar players
+def similar_records(choice, n):
+    """Similar-player table rows for one 'Name (season)' choice."""
+    name, season = parse_choice(choice)
+    rows = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
+    if rows.empty:
+        return []
+    sim = similar(rows.iloc[0]['player_id'], season, n)
+    sim['distance'] = sim['distance'].round(2)
+    return sim[['player_name', 'season', 'team_name', 'distance']].to_dict('records')
+
 
 # ----------------------------------------------------------------------------
 # layout
@@ -465,37 +476,28 @@ def update_traded_diff(choice):
 @callback(
     Output('similar_players_table', 'data'),
     Output('similar_players_table', 'active_cell'),
-    Output('sim_label_main','children'),
+    Output('sim_label_main', 'children'),
     Output('similar_players_table_comparison', 'data'),
     Output('similar_players_table_comparison', 'active_cell'),
-    Output('sim_label_comp','children'),
+    Output('sim_label_comp', 'children'),
     Output('sim_table_comparison', 'style'),
     Input('player_profile_choice', 'value'),
     Input('compare-choice', 'value'),
     Input('num_similar_players', 'value'),
 )
 def update_similar_players_table(choice, compare_choice, num_similar):
-    if not choice and not compare_choice:
-        return [], None, None, [], None, None, SIDE_HIDDEN_STYLE
+    if not choice:
+        return [], None, '', [], None, '', SIM_HIDDEN_STYLE
 
-    name, season = parse_choice(choice)
-    player_prof = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
-    
-    if compare_choice == None:
-        if player_prof.empty:
-            return [], None, None, [], None, None, SIDE_HIDDEN_STYLE
+    main_data = similar_records(choice, num_similar)
+    main_label = f'Similar to {parse_choice(choice)[0]}' if main_data else ''
 
-        player_id = player_prof.iloc[0]['player_id']
-        similar_players = similar(player_id, season, num_similar)
-        
-        compare_id = compare_prof.iloc[0]['player_id']
-        similar_players_comp = similar(compare_id, season_compare, num_similar)
-        return similar_players[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None, f'{name}', [], None, None, SIDE_HIDDEN_STYLE
-    else:
-        compare_name, season_compare = parse_choice(compare_choice)
-        compare_prof = prof_df[(prof_df['player_name'] == compare_name) & (prof_df['season'] == season_compare)]
-        
-    similar_players['distance'] = similar_players['distance'].round(2)
-    similar_players_comp['distance'] = similar_players_comp['distance'].round(2)
-    
-    return similar_players[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None, f'{name}', similar_players_comp[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None, f'{compare_name}', SIM_STYLE
+    if not compare_choice:
+        return main_data, None, main_label, [], None, '', SIM_HIDDEN_STYLE
+
+    comp_data = similar_records(compare_choice, num_similar)
+    comp_label = f'Similar to {parse_choice(compare_choice)[0]}' if comp_data else ''
+
+    return (main_data, None, main_label,
+            comp_data, None, comp_label,
+            SIM_STYLE if comp_data else SIM_HIDDEN_STYLE)
