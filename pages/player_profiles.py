@@ -4,271 +4,298 @@ import numpy as np
 
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.neighbors import NearestNeighbors
 
 from nba_api.stats.static import teams
 from nba_api.stats.endpoints import playergamelog
 
 import plotly.graph_objects as go
-import plotly.express as px
 
-import dash # type: ignore[import-not-found]
-from dash import html, Input, Output, callback, dash_table, State, dcc, ctx, no_update# type: ignore[import-not-found]
+import dash  # type: ignore[import-not-found]
+from dash import html, Input, Output, callback, dash_table, State, dcc, ctx  # type: ignore[import-not-found]
 
 
 con = sqlite3.connect('data/nba.db', timeout=10)
 cursor = con.cursor()
 
-
-query = "SELECT * FROM player_profiles"
-prof_df = pd.read_sql_query(query, con)
+prof_df = pd.read_sql_query("SELECT * FROM player_profiles", con)
 
 teams_nba = pd.DataFrame(teams.get_teams())
 seasons = prof_df['season'].unique()
 
-#merging team names & abbreviation to player profiles
+# merging team names & abbreviation to player profiles
 prof_df = (
     prof_df.merge(teams_nba[['id', 'full_name', 'abbreviation']],
                   left_on='team_id', right_on='id', how='left')
            .drop(columns=['id'])
            .rename(columns={'full_name': 'team_name', 'abbreviation': 'team_abbr'})
 )
-features = ['positions','pagerank_scaled','def_rating_per_rank','AST_PCT','USG','paint_prop','mid_range_prop','left_corner_prop','right_corner_prop','above_break_prop']
+
+features = ['positions', 'pagerank_scaled', 'def_rating_per_rank', 'AST_PCT', 'USG',
+            'paint_prop', 'mid_range_prop', 'left_corner_prop', 'right_corner_prop', 'above_break_prop']
+num_features = features[1:]
 
 preprocessor = ColumnTransformer(
     transformers=[
-        ('num', StandardScaler(), features[1:]),
+        ('num', StandardScaler(), num_features),
         ('cat', OneHotEncoder(drop='first'), ['positions'])
     ]
 )
 
 prof_df = prof_df.dropna(subset=features).reset_index(drop=True)
-
 X = preprocessor.fit_transform(prof_df[features])
-nn = NearestNeighbors(n_neighbors=6, metric='euclidean').fit(X)
+
+# column used in the dropdowns, e.g. "Nikola Jokic (2023-24)"
+prof_df['player_name_season'] = prof_df['player_name'] + ' (' + prof_df['season'] + ')'
+
+
+# ----------------------------------------------------------------------------
+# helpers
+# ----------------------------------------------------------------------------
+def parse_choice(choice):
+    """'Name (2023-24)' -> ('Name', '2023-24')"""
+    name, season = choice.rsplit(' (', 1)
+    return name, season.rstrip(')')
+
+
+def get_rows(name, season, team=None):
+    """Rows for one player-season. If a team is given and the player has rows
+    on that team, only those rows are used; otherwise all rows are returned
+    (e.g. a traded player, or a compare player who is on a different team)."""
+    rows = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
+    if team and team != 'All':
+        on_team = rows[rows['team_name'] == team]
+        if not on_team.empty:
+            return on_team
+    return rows
+
+
+def profile_vector(choice, team=None):
+    """Feature vector for one player-season (averaged if multiple rows)."""
+    name, season = parse_choice(choice)
+    rows = get_rows(name, season, team)
+    if rows.empty:
+        return None
+    return rows[num_features].mean(axis=0)
+
+
+def profile_table_data(choice, team=None):
+    """Rows for the Feature/Value DataTable of one player-season."""
+    name, season = parse_choice(choice)
+    rows = get_rows(name, season, team)
+    if rows.empty:
+        return []
+    vec = rows[num_features].mean(axis=0)
+    # 'ORL' for one team, 'ORL/DEN' if traded and no team filter applies
+    team_abbrs = '/'.join(rows['team_abbr'].dropna().unique())
+    data = [
+        {'feature': 'team', 'value': team_abbrs},
+        {'feature': 'positions', 'value': rows.iloc[0]['positions']},
+    ]
+    data += [{'feature': f, 'value': round(float(vec[f]), 3)} for f in num_features]
+    return data
+
+
+def headshot_url(choice):
+    name, season = parse_choice(choice)
+    rows = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
+    if rows.empty:
+        return ''
+    return f"https://cdn.nba.com/headshots/nba/latest/1040x760/{rows.iloc[0]['player_id']}.png"
+
 
 def similar(player_id, season, n=5):
     i = prof_df.index[(prof_df.player_id == player_id) & (prof_df.season == season)][0]
-    pid = prof_df.at[i, 'player_id']
 
     # distance from the query row to every row
     dist = np.linalg.norm(X - X[i], axis=1)
 
     # exclude every row belonging to this player (other seasons and the row itself)
-    dist[(prof_df['player_id'] == pid).to_numpy()] = np.inf
+    dist[(prof_df['player_id'] == player_id).to_numpy()] = np.inf
 
     idx = np.argsort(dist)[:n]
     return prof_df.iloc[idx].assign(distance=dist[idx])
 
-def get_player_profile(choice, team=None):
-    player_name, season = choice.split(' (')
-    season = season[:-1]
-    player_prof = prof_df[(prof_df['player_name'] == player_name) & (prof_df['season'] == season)]
-    if player_prof.empty:
-        return player_name, player_prof
-
-    if team is not None:
-        player_prof = player_prof.loc[player_prof['team_name']==team].copy()
-    else:
-        # one row: average each feature across the player's rows (e.g. multiple teams)
-        row = player_prof.iloc[[0]].copy()
-        row[features[1:]] = player_prof[features[1:]].mean(axis=0).values
-        player_prof = row
-    return player_name, player_prof.copy()
-
-#function to show correct team label for player and season
-def team_label(choice, team=None):
-    """'ORL' for one team, 'ORL/DEN' if traded (when no team is selected)."""
-    player_name, season = choice.split(' (')
-    season = season[:-1]
-    rows = prof_df[(prof_df['player_name'] == player_name) & (prof_df['season'] == season)]
-    if team is not None and team != 'All':
-        rows = rows[rows['team_name'] == team]
-    return '/'.join(rows['team_abbr'].dropna().unique())
-
-def profile_vector(name, season, team=None):
-    """Feature vector for one player-season (averaged if multiple teams)."""
-    rows = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
-    if team is not None:
-        rows = rows[rows['team_name'] == team]
-    if rows.empty:
-        return None
-    return rows[features[1:]].mean(axis=0)
-
 
 def build_radar(traces, title):
     """traces: list of (label, pd.Series of feature values)."""
-    theta = features[1:]
+    theta = num_features
     fig = go.Figure()
     for label, s in traces:
         r = s.values.tolist()
         fig.add_trace(go.Scatterpolar(
-            r=r + r[:1],                 # repeat first point to close the loop
+            r=r + r[:1],  # repeat first point to close the loop
             theta=theta + theta[:1],
             fill='toself',
             opacity=0.4,
             name=label,
         ))
-    fig.update_layout(title=title, 
-                      showlegend=True, 
+    fig.update_layout(title=title,
+                      showlegend=True,
                       polar=dict(radialaxis=dict(range=[0, 1], visible=True)))
     return fig
 
-#making a column that combines player name and season for the dropdown
-prof_df['player_name_season'] = prof_df['player_name'] + ' (' + prof_df['season'] + ')' 
+
+# ----------------------------------------------------------------------------
+# layout
+# ----------------------------------------------------------------------------
+LABEL_STYLE = {'fontFamily': 'sans-serif', 'fontWeight': 'bold'}
+
+# Side panels (main player / compare player) share the same sizing so the
+# two headshots and tables always line up. Hiding only flips 'display' and
+# keeps the rest of the style, so the flex sizing is never lost.
+SIDE_STYLE = {'flex': '1 1 0', 'minWidth': 0, 'maxWidth': '300px'}
+SIDE_HIDDEN_STYLE = {**SIDE_STYLE, 'display': 'none'}
+CENTER_STYLE = {'flex': '3 1 0', 'minWidth': 0}
+
+IMG_STYLE = {
+    'width': '100%',
+    'height': 'auto',
+    'aspectRatio': '1040 / 760',  # reserves space so the layout doesn't jump while loading
+    'objectFit': 'contain',
+}
 
 
-dash.register_page(__name__, path='/player_profiles', name='Player Profiles', order = 4)
+def profile_panel(img_id, table_id):
+    """Headshot + feature table. Used for both the main and the compare player."""
+    return [
+        html.Img(id=img_id, src='', style=IMG_STYLE),
+        dash_table.DataTable(
+            id=table_id,
+            columns=[{'name': 'Feature', 'id': 'feature'},
+                     {'name': 'Value', 'id': 'value'}],
+            style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
+            style_header={'fontWeight': 'bold'},
+            data=[],
+        ),
+    ]
+
+
+dash.register_page(__name__, path='/player_profiles', name='Player Profiles', order=4)
 
 layout = html.Div([
     html.Div(
-        style={'display': 'flex', 'justify-content': 'space-between', 'width': '100%'},
+        style={'display': 'flex', 'justifyContent': 'space-between', 'width': '100%'},
         children=[
             html.Div(
                 style={'width': '20%'},
                 children=[
-                    html.Label('Choice:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
+                    html.Label('Choice:', style=LABEL_STYLE),
                     dcc.Dropdown(id='player_profile_choice',
-                                options=prof_df['player_name_season'].unique(),
-                                value=prof_df['player_name_season'].unique()[0],
-                                style={"fontFamily": 'sans-serif'})
-                    ]
-            ),
-            html.Div(
-                style={'width':'20%'},
-                children=[
-                    html.Label('+ Compare with:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
-                    dcc.Dropdown(id='compare-choice',
-                                options=prof_df['player_name_season'].unique(),
-                                value="None",
-                                style={"fontFamily": 'sans-serif'})
+                                 options=prof_df['player_name_season'].unique(),
+                                 value=prof_df['player_name_season'].unique()[0],
+                                 style={'fontFamily': 'sans-serif'}),
                 ]
-            )
-        ]
-    ),
-    html.Br(),
-    html.Div(style={
-        'display': 'flex',
-        'flexDirection': 'row',
-        'gap': '20px',
-        'width': '100%'
-    },
-        children=[
-            html.Div(
-                children=[
-                    html.Img(
-                        id='player-profile-image',
-                        src='',
-                        style={
-                            'width': '100%',
-                            'height': 'auto',
-                            'objectFit': 'contain'
-                        }
-                    ),
-                    dash_table.DataTable(
-                        id='player_profile_table',
-                        columns=[
-                            {"name": "Feature", "id": "feature"},
-                            {"name": "Value", "id": "value"}
-                        ],
-                        style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
-                        style_header={'fontWeight': 'bold'},
-                        data=[],
-                    )],
-            style={'flex': '1 1 25%', 'minWidth': 0},
-        ),   html.Div(
-                children = [dcc.Graph(id='player_profile_graph', style={'height': '600px','width': '900px'}),
-
-                html.Div(
-                id='traded_diff_container',
-                style={'display': 'none'},
-                children=[
-                    html.H5("Change after trade", style={'fontFamily': 'sans-serif'}),
-                    dash_table.DataTable(
-                        id='traded_diff_table',
-                        columns=[],
-                        data=[],
-                        style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
-                        style_header={'fontWeight': 'bold'},
-                    ),
-                ],
-                )]
             ),
             html.Div(
-                    children=[
-                        html.Img(
-                            id='compare-player-image',
-                            src='',
-                            style={
-                                'width': '100%',
-                                'height': 'auto',
-                                'objectFit': 'contain'
-                            }
-                        ),
-                        dash_table.DataTable(
-                            id='compare-player-table',
-                            columns=[
-                                {"name": "Feature", "id": "feature"},
-                                {"name": "Value", "id": "value"}
-                            ],
-                            style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
-                            style_header={'fontWeight': 'bold'},
-                            data=[],
-                        )],
-                style={'flex': '1 1 25%', 'minWidth': 0, 'display': 'none'},
-                )
+                style={'width': '20%'},
+                children=[
+                    html.Label('+ Compare with:', style=LABEL_STYLE),
+                    dcc.Dropdown(id='compare-choice',
+                                 options=[],
+                                 value=None,
+                                 clearable=True,
+                                 placeholder='None',
+                                 style={'fontFamily': 'sans-serif'}),
+                ]
+            ),
         ]
     ),
     html.Br(),
-    html.Label('Similar Players:',style={"fontFamily": 'sans-serif','font-weight': 'bold'}),
-    dcc.Dropdown(id='num_similar_players',
-                options=[5, 10, 15, 20],
-                value=5,
-                style={"fontFamily": 'sans-serif','width': '10%'}),
+    html.Div(
+        style={'display': 'flex', 'flexDirection': 'row', 'alignItems': 'flex-start',
+               'gap': '20px', 'width': '100%'},
+        children=[
+            # LEFT: main player
+            html.Div(children=profile_panel('player-profile-image', 'player_profile_table'),
+                     style=SIDE_STYLE),
+
+            # CENTER: radar + trade diff
+            html.Div(
+                style=CENTER_STYLE,
+                children=[
+                    dcc.Graph(id='player_profile_graph',
+                              style={'height': '600px', 'width': '100%'},
+                              config={'responsive': True}),
+                    html.Div(
+                        id='traded_diff_container',
+                        style={'display': 'none'},
+                        children=[
+                            html.H5('Change after trade', style={'fontFamily': 'sans-serif'}),
+                            dash_table.DataTable(
+                                id='traded_diff_table',
+                                columns=[],
+                                data=[],
+                                style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
+                                style_header={'fontWeight': 'bold'},
+                            ),
+                        ],
+                    ),
+                ]
+            ),
+
+            # RIGHT: compare player (hidden until one is chosen)
+            html.Div(id='compare-container',
+                     children=profile_panel('compare-player-image', 'compare-player-table'),
+                     style=SIDE_HIDDEN_STYLE),
+        ]
+    ),
     html.Br(),
-    dash_table.DataTable(id='similar_players_table',
-        columns=[{"name": i, "id": i} for i in ['player_name','season','team_name','distance']],
-        style_cell={'textAlign': 'left', "fontFamily": 'sans-serif'},
+    html.Label('Similar Players:', style=LABEL_STYLE),
+    dcc.Dropdown(id='num_similar_players',
+                 options=[5, 10, 15, 20],
+                 value=5,
+                 style={'fontFamily': 'sans-serif', 'width': '10%'}),
+    html.Br(),
+    dash_table.DataTable(
+        id='similar_players_table',
+        columns=[{'name': i, 'id': i} for i in ['player_name', 'season', 'team_name', 'distance']],
+        style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif'},
         style_header={'fontWeight': 'bold'},
-        data = []),
+        data=[]),
 ])
 
-#change the player dropdown based on the season selected in the season slider & team dropdown based on the season selected in the season slider
-@callback(
-    Output("player_profile_choice", "options"),
-    Output("player_profile_choice", "value"),
-    Output("compare-choice", "options"),
-    Output("compare-choice", "value"),
-    Input("season-slider", "value"),
-    Input("team-dropdown", "value"),
-    State('compare-choice', 'value')
-)
-def update_player_dropdown(season_index, team_value, current_compare):
-    if team_value == 'All':
-        if season_index >= len(seasons):  # "All" option selected
-            options = prof_df['player_name_season'].sort_values(ascending=True).unique()
-        else:
-            selected_season = seasons[season_index]
-            options = prof_df[prof_df['season'] == selected_season]['player_name_season'].sort_values(ascending=True).unique()
-    else:
-        if season_index >= len(seasons):  # "All" option selected
-            options = prof_df[prof_df['team_name'] == team_value]['player_name_season'].sort_values(ascending=True).unique()
-        else:
-            selected_season = seasons[season_index]
-            options = prof_df[(prof_df['season'] == selected_season) & (prof_df['team_name'] == team_value)]['player_name_season'].sort_values(ascending=True).unique()
-    value = options[0] if len(options) > 0 else None
-    
-    
-    compare_options = [{'label': 'None', 'value': "None"}]
-    compare_options += [{'label': o, 'value': o} for o in options if o != value]
-    
-    compare_value = "None"
-    valid_values = {o['value'] for o in compare_options}
-    new_value = current_compare if current_compare in valid_values else "None"
-    
-    return options, value, compare_options, compare_value
 
-#building the player profile graph based on the player selected in the dropdown and the similar players selected in the table
+# ----------------------------------------------------------------------------
+# callbacks
+# ----------------------------------------------------------------------------
+# main player dropdown follows the season slider & team dropdown
+@callback(
+    Output('player_profile_choice', 'options'),
+    Output('player_profile_choice', 'value'),
+    Input('season-slider', 'value'),
+    Input('team-dropdown', 'value'),
+)
+def update_player_dropdown(season_index, team_value):
+    df = prof_df
+    if team_value != 'All':
+        df = df[df['team_name'] == team_value]
+    if season_index < len(seasons):  # otherwise the "All" option is selected
+        df = df[df['season'] == seasons[season_index]]
+
+    options = sorted(df['player_name_season'].unique())
+    return options, (options[0] if options else None)
+
+
+# compare dropdown: same season filter, but NOT limited to the selected team
+# (so you can compare against players on other teams), excluding the main player
+@callback(
+    Output('compare-choice', 'options'),
+    Output('compare-choice', 'value'),
+    Input('player_profile_choice', 'value'),
+    Input('season-slider', 'value'),
+    State('compare-choice', 'value'),
+)
+def update_compare_dropdown(choice, season_index, current_compare):
+    df = prof_df
+    if season_index < len(seasons):
+        df = df[df['season'] == seasons[season_index]]
+
+    options = sorted(o for o in df['player_name_season'].unique() if o != choice)
+    value = current_compare if current_compare in options else None
+    return options, value
+
+
+# radar graph for the main player, plus the clicked similar player and/or the compare player
 @callback(
     Output('player_profile_graph', 'figure'),
     Input('player_profile_choice', 'value'),
@@ -280,76 +307,63 @@ def update_player_dropdown(season_index, team_value, current_compare):
 def update_player_profile_graph(choice, compare_choice, active_cell, team_value, table_data):
     if not choice:
         return go.Figure()
-    
-    player_name, season = choice.split(' (')
-    season = season[:-1]
-    
-    #if team is All and player traded us the mean otherwise use team specific
-    if team_value == 'All':
-        main = profile_vector(player_name, season)
-    else:
-        main = profile_vector(player_name, season, team_value)
 
+    main = profile_vector(choice, team_value)
     if main is None:
         return go.Figure()
 
-    traces = [(f"{player_name} ({season})", main)]
+    traces = [(choice, main)]
 
-    # only add the comparison if the click came from the table, not a player change
+    # only add the similar-player trace if the click came from the table
     if active_cell and table_data and ctx.triggered_id == 'similar_players_table':
         row = table_data[active_cell['row']]
-        other = profile_vector(row['player_name'], row['season'], row['team_name'])
+        label = f"{row['player_name']} ({row['season']})"
+        other = profile_vector(label, row['team_name'])
         if other is not None:
-            traces.append((f"{row['player_name']} ({row['season']})", other))
-    
-    #add compared player to graph
-    if compare_choice != "None":
-        compared_player, _ = compare_choice.split(' (')
-        other = profile_vector(compared_player, season, team_value)
+            traces.append((label, other))
+
+    if compare_choice:
+        other = profile_vector(compare_choice, team_value)
         if other is not None:
-            traces.append(profile_vector((f"{compared_player} ({season})", other)))
+            traces.append((compare_choice, other))
 
-    return build_radar(traces, f"{player_name} Player Profile")
+    name, _ = parse_choice(choice)
+    return build_radar(traces, f'{name} Player Profile')
 
-#callback to show correct table used to build radar graph
-#if traded show mean between two when team is selected as All
-#otherwise split into seperate teams 
 
+# feature tables for the main and compare players; show/hide the compare panel
 @callback(
     Output('player_profile_table', 'data'),
     Output('compare-player-table', 'data'),
+    Output('compare-container', 'style'),
     Input('player_profile_choice', 'value'),
     Input('compare-choice', 'value'),
-    Input('team-dropdown', 'value')
+    Input('team-dropdown', 'value'),
 )
-def update_player_profile_table(choice, compare_choice, team_value):
-    team = None if team_value == 'All' else team_value
-    _, player_prof = get_player_profile(choice, team)
-    _,compare_prof = get_player_profile(compare_choice, team)
-    
-    if player_prof.empty:
-        return []
-    if compare_prof.empty:
-        return []
-    
-    row = player_prof.iloc[0]
-    compare_row = compare_prof.iloc[0]
-    
-    data = [{"feature": "team", "value": team_label(choice, team)}]
-    data += [
-        {"feature": f, "value": row[f] if f == 'positions' else round(float(row[f]), 3)}
-        for f in features
-    ]
-    
-    compare_data = [{"feature": "team", "value": team_label(choice, team)}]
-    compare_data += [
-        {"feature": f, "value": row[f] if f == 'positions' else round(float(row[f]), 3)}
-        for f in features
-    ]
-    return data, compare_data
+def update_player_profile_tables(choice, compare_choice, team_value):
+    main_data = profile_table_data(choice, team_value) if choice else []
+    compare_data = profile_table_data(compare_choice, team_value) if compare_choice else []
 
-#creating table with differences for traded players
-diff_features = features[1:]
+    style = SIDE_STYLE if compare_data else SIDE_HIDDEN_STYLE
+    return main_data, compare_data, style
+
+
+# headshots for the main and compare players
+@callback(
+    Output('player-profile-image', 'src'),
+    Output('compare-player-image', 'src'),
+    Input('player_profile_choice', 'value'),
+    Input('compare-choice', 'value'),
+)
+def update_player_images(choice, compare_choice):
+    main_url = headshot_url(choice) if choice else ''
+    compare_url = headshot_url(compare_choice) if compare_choice else ''
+    return main_url, compare_url
+
+
+# table with differences for traded players
+diff_features = num_features
+
 
 @callback(
     Output('traded_diff_table', 'data'),
@@ -363,52 +377,38 @@ def update_traded_diff(choice):
     if not choice:
         return [], [], [], hidden
 
-    name, season = choice.split(' (')
-    season = season[:-1]
-    
+    name, season = parse_choice(choice)
+
     player_df = prof_df[prof_df['player_name'] == name].reset_index()
-    
     rows = player_df[player_df['season'] == season]
-    
+
     if len(rows) < 2:
         return [], [], [], hidden
 
     columns = [{'name': 'Feature', 'id': 'feature'}]
     data = [{'feature': f} for f in diff_features]
     styles = []
-    
-    start, _ = rows.index
-    
-    #if the start is 0 then getting the team they started with by looking at the exact gamelog for the year
+
+    start = rows.index[0]
+
+    # if there's no earlier season row, find the team they started with from the first games of the year
     if start == 0:
-        playid = player_df.loc[0,'player_id']
-        season_gamelog = playergamelog.PlayerGameLog(player_id=playid,season=season).get_data_frames()[0]
-        start_season = season_gamelog.tail()
-        team_split = [start_season['MATCHUP'].to_list()[i].split(' ') for i in range(len(start_season))]
-        seen_teams = {}
+        playid = player_df.loc[0, 'player_id']
+        season_gamelog = playergamelog.PlayerGameLog(player_id=playid, season=season).get_data_frames()[0]
+        # gamelog is newest-first, so tail() is the earliest games.
+        # MATCHUP looks like "LAL vs. BOS" / "LAL @ BOS": the first token is the player's own team
+        first_games = season_gamelog.tail()
+        old_team_abbr = first_games['MATCHUP'].str.split(' ').str[0].mode().iloc[0]
 
-        for i in range(len(start_season)):
-            row = team_split[i]
-            for j in range(0,len(row),2):
-                if row[j] in seen_teams:
-                    seen_teams[row[j]] = seen_teams.get(row[j],0) + 1
-                else:
-                    seen_teams[row[j]] = 1
-
-        old_team_abbr = max(seen_teams, key=seen_teams.get)
-        
-        old = player_df[player_df['team_abbr']==old_team_abbr].iloc[0,:]
+        old = player_df[player_df['team_abbr'] == old_team_abbr].iloc[0, :]
     else:
-        old = player_df.iloc[start-1,:]
+        old = player_df.iloc[start - 1, :]
 
     traded_team = rows['team_id'] != old['team_id']
-    
     new_index = traded_team[traded_team].index[0]
-    
-    new = rows.loc[new_index,:] 
+    new = rows.loc[new_index, :]
 
     for k in range(1, len(rows)):
-        
         cid = f'd{k}'
         columns.append({'name': f'{old["team_abbr"]} → {new["team_abbr"]}', 'id': cid})
         for rec, f in zip(data, diff_features):
@@ -421,7 +421,8 @@ def update_traded_diff(choice):
         ]
 
     return data, columns, styles, {'display': 'block'}
- 
+
+
 @callback(
     Output('similar_players_table', 'data'),
     Output('similar_players_table', 'active_cell'),
@@ -429,38 +430,14 @@ def update_traded_diff(choice):
     Input('num_similar_players', 'value'),
 )
 def update_similar_players_table(choice, num_similar):
-    player_name, season = choice.split(' (')  # Extract the player name and season
-    season = season[:-1]  # Remove the closing parenthesis
-    player_prof = prof_df[(prof_df['player_name'] == player_name)&(prof_df['season'] == season)]
+    if not choice:
+        return [], None
+
+    name, season = parse_choice(choice)
+    player_prof = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
     if player_prof.empty:
         return [], None
-    player_id = player_prof.iloc[0]['player_id']
-    season = player_prof.iloc[0]['season']
-    similar_players = similar(player_id, season, num_similar)
-    return similar_players[['player_name','season','team_name','distance']].to_dict('records'), None
 
-#showing correct player image based on the player selected in the dropdown
-@callback(
-    Output('player-profile-image', 'src'),
-    Output('compare-player-image', 'src'),
-    Input('player_profile_choice', 'value'),
-    Input('compare-choice', 'value')
-)
-def update_player_image(choice, compare_choice):    
-    player_name, _ = choice.split(' (')
-    
-    compare_name, _ = compare_choice.split(' (')
-    
-    player_prof = prof_df[prof_df['player_name'] == player_name]
-    if player_prof.empty:
-        return ''
     player_id = player_prof.iloc[0]['player_id']
-    image_url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{player_id}.png"
-    
-    compare_prof = prof_df[prof_df['player_name'] == compare_name]
-    if compare_prof.empty:
-        return ''
-    compare_id = compare_prof.iloc[0]['player_id']
-    compare_url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{compare_id}.png"
-    
-    return image_url, compare_url
+    similar_players = similar(player_id, season, num_similar)
+    return similar_players[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None
