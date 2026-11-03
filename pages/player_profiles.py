@@ -320,11 +320,12 @@ def update_compare_dropdown(choice, season_index, current_compare):
     Input('player_profile_choice', 'value'),
     Input('compare-choice', 'value'),
     Input('similar_players_table', 'active_cell'),
+    Input('similar_players_table_comparison', 'active_cell'),
     Input('team-dropdown', 'value'),
     State('similar_players_table', 'data'),
     State('similar_players_table_comparison', 'data')
 )
-def update_player_profile_graph(choice, compare_choice, active_cell, team_value, table_data):
+def update_player_profile_graph(choice, compare_choice, active_cell, comp_active, team_value, table_data, comp_table):
     if not choice:
         return go.Figure()
 
@@ -343,8 +344,8 @@ def update_player_profile_graph(choice, compare_choice, active_cell, team_value,
             traces.append((label, other))
     
     #same for the comparison player similar table    
-    if active_cell and table_data and ctx.triggered_id == 'similar_players_table_comparison':
-        row = table_data[active_cell['row']]
+    if comp_active and comp_table and ctx.triggered_id == 'similar_players_table_comparison':
+        row = comp_table[comp_active['row']]
         label = f"{row['player_name']} ({row['season']})"
         other = profile_vector(label, row['team_name'])
         if other is not None:
