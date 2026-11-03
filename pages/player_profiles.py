@@ -445,18 +445,34 @@ def update_traded_diff(choice):
 @callback(
     Output('similar_players_table', 'data'),
     Output('similar_players_table', 'active_cell'),
+    Output('similar_players_table_comparison', 'data'),
+    Output('similar_players_table_comparison', 'active_cell'),
+    Output('sim_table_comparison', 'style'),
     Input('player_profile_choice', 'value'),
+    Input('compare-choice', 'value'),
     Input('num_similar_players', 'value'),
 )
-def update_similar_players_table(choice, num_similar):
-    if not choice:
-        return [], None
+def update_similar_players_table(choice, compare_choice, num_similar):
+    if not choice and not compare_choice:
+        return [], None, [], None, SIDE_HIDDEN_STYLE
 
     name, season = parse_choice(choice)
     player_prof = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
+    
+    compare_name, season_compare = parse_choice(compare_choice)
+    compare_prof = prof_df[(prof_df['player_name'] == compare_name) & (prof_df['season'] == season_compare)]
+    
     if player_prof.empty:
-        return [], None
+        return [], None, [], None, SIDE_HIDDEN_STYLE
 
     player_id = player_prof.iloc[0]['player_id']
     similar_players = similar(player_id, season, num_similar)
-    return similar_players[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None
+    
+    compare_id = compare_prof.iloc[0]['player_id']
+    similar_players_comp = similar(compare_id, season_compare, num_similar)
+    
+    
+    similar_players['distance'] = similar_players['distance'].round(2)
+    similar_players_comp['distance'] = similar_players_comp['distance'].round(2)
+    
+    return similar_players[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None, similar_players_comp[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None, SIDE_STYLE
