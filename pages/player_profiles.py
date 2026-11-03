@@ -482,21 +482,19 @@ def update_similar_players_table(choice, compare_choice, num_similar):
     player_prof = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
     
     if compare_choice == None:
-        return [], None, None, [], None, None, SIDE_HIDDEN_STYLE
+        if player_prof.empty:
+            return [], None, None, [], None, None, SIDE_HIDDEN_STYLE
+
+        player_id = player_prof.iloc[0]['player_id']
+        similar_players = similar(player_id, season, num_similar)
+        
+        compare_id = compare_prof.iloc[0]['player_id']
+        similar_players_comp = similar(compare_id, season_compare, num_similar)
+        return similar_players[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None, f'{name}', [], None, None, SIDE_HIDDEN_STYLE
     else:
         compare_name, season_compare = parse_choice(compare_choice)
         compare_prof = prof_df[(prof_df['player_name'] == compare_name) & (prof_df['season'] == season_compare)]
         
-    if player_prof.empty:
-        return [], None, None, [], None, None, SIDE_HIDDEN_STYLE
-
-    player_id = player_prof.iloc[0]['player_id']
-    similar_players = similar(player_id, season, num_similar)
-    
-    compare_id = compare_prof.iloc[0]['player_id']
-    similar_players_comp = similar(compare_id, season_compare, num_similar)
-    
-    
     similar_players['distance'] = similar_players['distance'].round(2)
     similar_players_comp['distance'] = similar_players_comp['distance'].round(2)
     
