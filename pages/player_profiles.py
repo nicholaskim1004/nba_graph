@@ -145,6 +145,66 @@ def similar_records(choice, n):
     sim['distance'] = sim['distance'].round(2)
     return sim[['player_name', 'season', 'team_name', 'distance']].to_dict('records')
 
+#for creating the difference between traded tables
+def diff_style(show, comp=False):
+    """Container style for a trade-diff table. The compare one is pushed to the right."""
+    style = {'flex': '0 0 48%', 'minWidth': 0, 'display': 'block' if show else 'none'}
+    if comp:
+        style['marginLeft'] = 'auto'
+    return style
+
+
+def traded_diff(choice, comp=False):
+    """(data, columns, style_data_conditional, container_style, label) for one player-season.
+    Returns a hidden/empty result if the player wasn't traded that season."""
+    empty = ([], [], [], diff_style(False, comp), '')
+    if not choice:
+        return empty
+
+    name, season = parse_choice(choice)
+    player_df = prof_df[prof_df['player_name'] == name].reset_index()
+    rows = player_df[player_df['season'] == season]
+    if len(rows) < 2:
+        return empty
+
+    start = rows.index[0]
+
+    # no earlier row to compare against: find the starting team from the first games of the season
+    if start == 0:
+        playid = player_df.loc[0, 'player_id']
+        gamelog = playergamelog.PlayerGameLog(player_id=playid, season=season).get_data_frames()[0]
+        if gamelog.empty:
+            return empty
+        # gamelog is newest-first, so tail() is the earliest games.
+        # MATCHUP is "LAL vs. BOS" / "LAL @ BOS": the first token is the player's own team
+        old_team_abbr = gamelog.tail()['MATCHUP'].str.split(' ').str[0].mode().iloc[0]
+        old_rows = player_df[player_df['team_abbr'] == old_team_abbr]
+        if old_rows.empty:
+            return empty
+        old = old_rows.iloc[0]
+    else:
+        old = player_df.iloc[start - 1]
+
+    new_rows = rows[rows['team_id'] != old['team_id']]
+    if new_rows.empty:
+        return empty
+    new = new_rows.iloc[0]
+
+    data = [
+        {'feature': f, 'diff': round(float(new[f] - old[f]), 3)}
+        for f in diff_features
+    ]
+    columns = [
+        {'name': 'Feature', 'id': 'feature'},
+        {'name': f'{old["team_abbr"]} → {new["team_abbr"]}', 'id': 'diff'},
+    ]
+    styles = [
+        {'if': {'filter_query': '{diff} > 0', 'column_id': 'diff'},
+         'backgroundColor': '#f8b4b4', 'color': '#7a1212'},
+        {'if': {'filter_query': '{diff} < 0', 'column_id': 'diff'},
+         'backgroundColor': '#b4cdf8', 'color': '#12307a'},
+    ]
+    return data, columns, styles, diff_style(True, comp), choice
 
 # ----------------------------------------------------------------------------
 # layout
@@ -230,21 +290,7 @@ layout = html.Div([
                 children=[
                     dcc.Graph(id='player_profile_graph',
                               style={'height': '600px', 'width': '100%'},
-                              config={'responsive': True}),
-                    html.Div(
-                        id='traded_diff_container',
-                        style={'display': 'none'},
-                        children=[
-                            html.H5('Change after trade', style={'fontFamily': 'sans-serif'}),
-                            dash_table.DataTable(
-                                id='traded_diff_table',
-                                columns=[],
-                                data=[],
-                                style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
-                                style_header={'fontWeight': 'bold'},
-                            ),
-                        ],
-                    ),
+                              config={'responsive': True})
                 ]
             ),
 
@@ -253,6 +299,39 @@ layout = html.Div([
                      children=profile_panel('compare-player-image', 'compare-player-table'),
                      style=SIDE_HIDDEN_STYLE),
         ]
+    ),
+        html.Div(
+    style={'display': 'flex', 'width': '100%'},
+    children=[
+        html.Div(
+            id='traded_diff_container',
+            style=diff_style(False),
+            children=[
+                html.H5('Change after trade', style={'fontFamily': 'sans-serif'}),
+                html.Label(id='main-traded', children='', style=LABEL_STYLE),
+                dash_table.DataTable(
+                    id='traded_diff_table',
+                    columns=[], data=[],
+                    style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
+                    style_header={'fontWeight': 'bold'},
+                ),
+            ],
+        ),
+        html.Div(
+            id='traded_diff_container_comp',
+            style=diff_style(False, comp=True),
+            children=[
+                html.H5('Change after trade', style={'fontFamily': 'sans-serif'}),
+                html.Label(id='comp-traded', children='', style=LABEL_STYLE),
+                dash_table.DataTable(
+                    id='traded_diff_table_comp',
+                    columns=[], data=[],
+                    style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif', 'padding': '4px 8px'},
+                    style_header={'fontWeight': 'bold'},
+                    ),
+                ],
+            ),
+        ],
     ),
     html.Br(),
     html.Label('Similar Players:', style=LABEL_STYLE),
@@ -420,58 +499,19 @@ diff_features = num_features
     Output('traded_diff_table', 'columns'),
     Output('traded_diff_table', 'style_data_conditional'),
     Output('traded_diff_container', 'style'),
+    Output('main-traded', 'children'),
+
+    Output('traded_diff_table_comp', 'data'),
+    Output('traded_diff_table_comp', 'columns'),
+    Output('traded_diff_table_comp', 'style_data_conditional'),
+    Output('traded_diff_container_comp', 'style'),
+    Output('comp-traded', 'children'),
+
     Input('player_profile_choice', 'value'),
+    Input('compare-choice', 'value'),
 )
-def update_traded_diff(choice):
-    hidden = {'display': 'none'}
-    if not choice:
-        return [], [], [], hidden
-
-    name, season = parse_choice(choice)
-
-    player_df = prof_df[prof_df['player_name'] == name].reset_index()
-    rows = player_df[player_df['season'] == season]
-
-    if len(rows) < 2:
-        return [], [], [], hidden
-
-    columns = [{'name': 'Feature', 'id': 'feature'}]
-    data = [{'feature': f} for f in diff_features]
-    styles = []
-
-    start = rows.index[0]
-
-    # if there's no earlier season row, find the team they started with from the first games of the year
-    if start == 0:
-        playid = player_df.loc[0, 'player_id']
-        season_gamelog = playergamelog.PlayerGameLog(player_id=playid, season=season).get_data_frames()[0]
-        # gamelog is newest-first, so tail() is the earliest games.
-        # MATCHUP looks like "LAL vs. BOS" / "LAL @ BOS": the first token is the player's own team
-        first_games = season_gamelog.tail()
-        old_team_abbr = first_games['MATCHUP'].str.split(' ').str[0].mode().iloc[0]
-
-        old = player_df[player_df['team_abbr'] == old_team_abbr].iloc[0, :]
-    else:
-        old = player_df.iloc[start - 1, :]
-
-    traded_team = rows['team_id'] != old['team_id']
-    new_index = traded_team[traded_team].index[0]
-    new = rows.loc[new_index, :]
-
-    for k in range(1, len(rows)):
-        cid = f'd{k}'
-        columns.append({'name': f'{old["team_abbr"]} → {new["team_abbr"]}', 'id': cid})
-        for rec, f in zip(data, diff_features):
-            rec[cid] = round(float(new[f] - old[f]), 3)
-        styles += [
-            {'if': {'filter_query': f'{{{cid}}} > 0', 'column_id': cid},
-             'backgroundColor': '#f8b4b4', 'color': '#7a1212'},
-            {'if': {'filter_query': f'{{{cid}}} < 0', 'column_id': cid},
-             'backgroundColor': '#b4cdf8', 'color': '#12307a'},
-        ]
-
-    return data, columns, styles, {'display': 'block'}
-
+def update_traded_diff(choice, compare_choice):
+    return (*traded_diff(choice), *traded_diff(compare_choice, comp=True))
 
 @callback(
     Output('similar_players_table', 'data'),
