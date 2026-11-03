@@ -154,6 +154,10 @@ IMG_STYLE = {
     'objectFit': 'contain',
 }
 
+# one style pair for the similar-player tables
+SIM_STYLE = {'flex': '1 1 0', 'minWidth': 0}
+SIM_HIDDEN_STYLE = {**SIM_STYLE, 'display': 'none'}
+
 
 def profile_panel(img_id, table_id):
     """Headshot + feature table. Used for both the main and the compare player."""
@@ -248,17 +252,24 @@ layout = html.Div([
     html.Br(),
     html.Div(
     children=[
-        dash_table.DataTable(
-            id='similar_players_table',
-            columns=[{'name': i, 'id': i} for i in ['player_name', 'season', 'team_name', 'distance']],
-            style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif'},
-            style_header={'fontWeight': 'bold'},
-            data=[]),
+        html.Div(
+            style = SIM_STYLE,
+            children = [
+                html.Label(id='sim_label_main',children=[],style=LABEL_STYLE),
+                dash_table.DataTable(
+                    id='similar_players_table',
+                    columns=[{'name': i, 'id': i} for i in ['player_name', 'season', 'team_name', 'distance']],
+                    style_cell={'textAlign': 'left', 'fontFamily': 'sans-serif'},
+                    style_header={'fontWeight': 'bold'},
+                    data=[])
+                ]
+            ),
         
         #RIGHT table for compare player if chosen
         html.Div(
             id = 'sim_table_comparison',
             children = [
+                html.Label(id='sim_label_comp',children=[],style=LABEL_STYLE),
                 dash_table.DataTable(
                     id='similar_players_table_comparison',
                     columns=[{'name': i, 'id': i} for i in ['player_name', 'season', 'team_name', 'distance']],
@@ -266,11 +277,10 @@ layout = html.Div([
                     style_header={'fontWeight': 'bold'},
                     data=[])
                 ],
-            style = SIDE_HIDDEN_STYLE
+            style = SIM_HIDDEN_STYLE
             )
         ],
-    style={'display': 'flex', 'flexDirection': 'row', 'alignItems': 'flex-start','gap': '20px', 'width': '100%'}
-    )
+    style={'display': 'flex', 'flexDirection': 'row', 'alignItems': 'flex-start','gap': '20px', 'width': '100%'},    )
 ])
 
 
@@ -455,8 +465,10 @@ def update_traded_diff(choice):
 @callback(
     Output('similar_players_table', 'data'),
     Output('similar_players_table', 'active_cell'),
+    Output('sim_label_main','children'),
     Output('similar_players_table_comparison', 'data'),
     Output('similar_players_table_comparison', 'active_cell'),
+    Output('sim_label_comp','children'),
     Output('sim_table_comparison', 'style'),
     Input('player_profile_choice', 'value'),
     Input('compare-choice', 'value'),
@@ -464,19 +476,19 @@ def update_traded_diff(choice):
 )
 def update_similar_players_table(choice, compare_choice, num_similar):
     if not choice and not compare_choice:
-        return [], None, [], None, SIDE_HIDDEN_STYLE
+        return [], None, None, [], None, None, SIDE_HIDDEN_STYLE
 
     name, season = parse_choice(choice)
     player_prof = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
     
-    if compare_choice == "None":
-        return [], None, [], None, SIDE_HIDDEN_STYLE
-    
-    compare_name, season_compare = parse_choice(compare_choice)
-    compare_prof = prof_df[(prof_df['player_name'] == compare_name) & (prof_df['season'] == season_compare)]
-    
+    if compare_choice == None:
+        return [], None, None, [], None, None, SIDE_HIDDEN_STYLE
+    else:
+        compare_name, season_compare = parse_choice(compare_choice)
+        compare_prof = prof_df[(prof_df['player_name'] == compare_name) & (prof_df['season'] == season_compare)]
+        
     if player_prof.empty:
-        return [], None, [], None, SIDE_HIDDEN_STYLE
+        return [], None, None, [], None, None, SIDE_HIDDEN_STYLE
 
     player_id = player_prof.iloc[0]['player_id']
     similar_players = similar(player_id, season, num_similar)
@@ -488,4 +500,4 @@ def update_similar_players_table(choice, compare_choice, num_similar):
     similar_players['distance'] = similar_players['distance'].round(2)
     similar_players_comp['distance'] = similar_players_comp['distance'].round(2)
     
-    return similar_players[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None, similar_players_comp[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None, SIDE_STYLE
+    return similar_players[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None, f'{name}', similar_players_comp[['player_name', 'season', 'team_name', 'distance']].to_dict('records'), None, f'{compare_name}', SIM_STYLE
