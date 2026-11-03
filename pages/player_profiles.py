@@ -162,20 +162,31 @@ def traded_diff(choice, comp=False):
         return empty
 
     name, season = parse_choice(choice)
-    player_df = prof_df[prof_df['player_name'] == name].reset_index()
-    playid = player_df.loc[0, 'player_id']
-    
-    player_traded = traded_inf[(traded_inf['player_id']==playid)&(traded_inf['season']==season)]
+    rows = prof_df[(prof_df['player_name'] == name) & (prof_df['season'] == season)]
+    if len(rows) < 2:
+        return empty
 
-    new, old = player_traded['new_team_abbr'], player_traded['old_team_abbr']
-    
+    playid = int(rows.iloc[0]['player_id'])
+    traded = traded_inf[(traded_inf['player_id'] == playid) & (traded_inf['season'] == season)]
+    if traded.empty:
+        return empty
+
+    old_team = traded.iloc[0]['old_team_abbr']
+    new_team = traded.iloc[0]['new_team_abbr']
+
+    old_rows = rows[rows['team_abbr'] == old_team]
+    new_rows = rows[rows['team_abbr'] == new_team]
+    if old_rows.empty or new_rows.empty:
+        return empty
+    old, new = old_rows.iloc[0], new_rows.iloc[0]  # single rows (Series), so new[f] is a scalar
+
     data = [
         {'feature': f, 'diff': round(float(new[f] - old[f]), 3)}
         for f in diff_features
     ]
     columns = [
         {'name': 'Feature', 'id': 'feature'},
-        {'name': f'{old} → {new}', 'id': 'diff'},
+        {'name': f'{old_team} → {new_team}', 'id': 'diff'},
     ]
     styles = [
         {'if': {'filter_query': '{diff} > 0', 'column_id': 'diff'},
